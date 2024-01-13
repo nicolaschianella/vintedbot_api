@@ -1,9 +1,9 @@
-from backend.utils.vinted_api.items.item import Item
-from backend.utils.vinted_api.requester import requester
+from backend.utils.items.item import Item
+from backend.utils.requester import requester
 from urllib.parse import urlparse, parse_qsl
 from requests.exceptions import HTTPError
 from typing import List, Dict
-from backend.utils.vinted_api.settings import Urls
+from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT
 class Items:
 
     def search(self, url, nbrItems: int = 20, page: int =1, time: int = None, json: bool = False) -> List[Item]:
@@ -18,7 +18,7 @@ class Items:
         """
 
         params = self.parseUrl(url, nbrItems, page, time)
-        url = f"{Urls.VINTED_API_URL}/{Urls.VINTED_PRODUCTS_ENDPOINT}"
+        url = f"{VINTED_API_URL}/{VINTED_PRODUCTS_ENDPOINT}"
 
         try:
             response = requester.get(url=url, params=params)
@@ -61,9 +61,6 @@ class Items:
             ),
             "size_ids": ",".join(
                 map(str, [tpl[1] for tpl in querys if tpl[0] == "size_id[]"])
-            ),
-            "material_ids": ",".join(
-                map(str, [tpl[1] for tpl in querys if tpl[0] == "material_id[]"])
             ),
             "status_ids": ",".join(
                 map(str, [tpl[1] for tpl in querys if tpl[0] == "status[]"])
