@@ -7,5 +7,5 @@ __pycache__/
 .vscode/
 # Git
 .git/
-# VirtuelEnv
+# VirtualEnv
 venv/
