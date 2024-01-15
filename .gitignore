@@ -1,5 +1,6 @@
 # Logs
 *.log
+nohup.out
 # PyCharm stuff
 .idea/
 __pycache__/
