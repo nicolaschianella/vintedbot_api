@@ -1,2 +1,11 @@
 # Logs
 *.log
+# PyCharm stuff
+.idea/
+__pycache__/
+# VS Code
+.vscode/
+# Git
+.git/
+# VirtuelEnv
+venv/
