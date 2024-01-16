@@ -83,8 +83,8 @@ class Items:
             "price_from": ",".join(
                 map(str, [tpl[1] for tpl in querys if tpl[0] == "price_from"])
             ),
-            "page": page,
-            "per_page": nbrItems,
+            "page": str(page),
+            "per_page": str(nbrItems),
             "order": ",".join(
                 map(str, [tpl[1] for tpl in querys if tpl[0] == "order"])
             ),
