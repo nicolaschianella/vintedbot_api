@@ -24,7 +24,9 @@ router = APIRouter(
 async def health_check():
     """
     Simple route to check if the API is alive
-    :return:
+
+    Returns: backend.models.models.CustomResponse
+
     """
     logging.info("I am alive, please check the docs for my usage")
     return JSONResponse(
