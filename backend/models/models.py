@@ -17,19 +17,29 @@ class CustomResponse(BaseModel):
 
 
 class InputGetClothes(BaseModel):
-    nb_items: int = 50
+    # Page number to get items from per search
+    page: str = "1"
+    # Number of items for this page to get per search
+    per_page: str = "96"
+    # "Rechercher" field
     search_text: str = ""
+    # "Catégorie" filter
     catalog_ids: str = ""
+    # "Couleur" field
     color_ids: str = ""
+    # "Marque" field
     brand_ids: str = ""
+    # "Taille" filter
     size_ids: str = ""
+    # "Matière" field
     material_ids: str = ""
+    # Price from -> parameter only appears in API if value != ""
+    price_from: str = ""
+    # Price to -> parameter only appears in API if value != ""
+    price_to: str = ""
+    # "Etat" field
     status_ids: str = ""
-    country_ids: str = ""
-    city_ids: str = ""
-    is_for_swap: str = ""
-    currency: str = "EUR"
-    price_to: int = 1000
-    price_from: int = 0
+    # "Trier par" field
     order: str = "newest_first"
-    time: None
+    # Not a filter itself but necessary for the API to work
+    currency: str = "EUR"
