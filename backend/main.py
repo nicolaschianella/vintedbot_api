@@ -13,7 +13,7 @@ import os
 import time
 import uvicorn
 from fastapi import FastAPI
-from backend.routers import health
+from backend.routers import health, operations
 
 
 if __name__ == "__main__":
@@ -59,6 +59,7 @@ if __name__ == "__main__":
     )
 
     app.include_router(health.router)
+    app.include_router(operations.router)
 
     # Run app - override log_config parameter
     uvicorn.run(app, host="127.0.0.1", port=int(args.port), log_config=None)
