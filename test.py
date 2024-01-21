@@ -2,7 +2,6 @@ import requests
 import re
 import json
 
-
 def extract_csrf_token(text):
     match = re.search(r'\\"CSRF_TOKEN\\":\\"([^"]+)\\"', text)
     if match:
@@ -11,6 +10,11 @@ def extract_csrf_token(text):
         return None
 
 s = requests.Session()
+
+# Chargement des cookies si existant
+cookies = ""
+with open("cookies.json", "r") as file:
+    cookies = json.load(file)
 
 # r = session.get("https://www.vinted.fr/member/general/session_from_token", headers=headers)
 s.headers = {
@@ -22,7 +26,12 @@ s.headers = {
         'TE': 'Trailers',
     }
 # s.headers = headers
-req = s.get("https://www.vinted.fr")
+
+# On charge la page avec les cookies si existant
+if cookies:
+    req = s.get("https://www.vinted.fr", cookies=cookies)
+else:
+    req = req = s.get("https://www.vinted.fr")
 csrfToken = extract_csrf_token(req.text)
 
 """Ici routes pour full login si on veut faire tout le process de connexion"""
@@ -94,26 +103,28 @@ csrfToken = extract_csrf_token(req.text)
 """FIN ROUTES POUR LOGIN"""
 
 
+# On exécute ceci uniquement pour se log, si pas de cookies existant
+if cookies:
+    token = "" # A METTRE
+    s.headers = {
+    "Accept":"application/json, text/plain, */*",
+    "Accept-Encoding":"gzip, deflate, br",
+    "Accept-Language":"fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Authorization":f"Bearer {token}", # IMPORTANT
+    "Referer":"https://www.vinted.fr/",
+    "Sec-Ch-Ua":'"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    "Sec-Ch-Ua-Mobile":"?0",
+    "Sec-Ch-Ua-Platform":'"Windows"',
+    "Sec-Fetch-Dest":"empty",
+    "Sec-Fetch-Mode":"cors",
+    "Sec-Fetch-Site":"same-origin",
+    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
 
-token = "" # A METTRE
-s.headers = {
-"Accept":"application/json, text/plain, */*",
-"Accept-Encoding":"gzip, deflate, br",
-"Accept-Language":"fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-"Authorization":f"Bearer {token}", # IMPORTANT
-"Referer":"https://www.vinted.fr/",
-"Sec-Ch-Ua":'"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-"Sec-Ch-Ua-Mobile":"?0",
-"Sec-Ch-Ua-Platform":'"Windows"',
-"Sec-Fetch-Dest":"empty",
-"Sec-Fetch-Mode":"cors",
-"Sec-Fetch-Site":"same-origin",
-"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-}
-
-req4 = s.get("https://www.vinted.fr/member/general/session_from_token", cookies=req.cookies.get_dict())
+    req4 = s.get("https://www.vinted.fr/member/general/session_from_token", cookies=req.cookies.get_dict())
 
 
+# On exécute le like avec les cookies choppés soit des cookies chargés, soit après le log
 s.headers = {
 "Accept":"application/json, text/plain, */*",
 "Accept-Encoding":"gzip, deflate, br",
@@ -121,7 +132,7 @@ s.headers = {
 "Content-Length":"46",
 "Content-Type":"application/json",
 "Origin":"https://www.vinted.fr",
-"Referer":"https://www.vinted.fr/items/3995562194-b-ton-majorette", # IMPORTANT, LIEN OBJET, LE NUMERO DOIT ETRE LE MEME QUE DANS USER_FAVOURITES EN BAS
+"Referer":"https://www.vinted.fr/items/4005527973-veste-quechua-neuf", # IMPORTANT, LIEN OBJET, LE NUMERO DOIT ETRE LE MEME QUE DANS USER_FAVOURITES EN BAS
 "Sec-Ch-Ua":'"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
 "Sec-Ch-Ua-Mobile":"?0",
 "Sec-Ch-Ua-Platform":'"Windows"',
@@ -136,10 +147,23 @@ s.headers = {
 # "X-Datadog-Sampling-Priority":"1",
 # "X-Datadog-Trace-Id":"498934100531349759"
 }
-params_like = {"type":"item","user_favourites":[3995562194]} # ICI NUMERO USER_FAVOURITES
-like = s.post("https://www.vinted.fr/api/v2/user_favourites/toggle", data=json.dumps(params_like), cookies=req4.cookies.get_dict())
+params_like = {"type":"item","user_favourites":[4005527973]} # ICI NUMERO USER_FAVOURITES
+
+if not cookies:
+    # req4
+    like = s.post("https://www.vinted.fr/api/v2/user_favourites/toggle", data=json.dumps(params_like),
+                  cookies=req4.cookies.get_dict())
+else:
+    # req car on se relog pas entre temps
+    like = s.post("https://www.vinted.fr/api/v2/user_favourites/toggle", data=json.dumps(params_like), cookies=req.cookies.get_dict())
 
 
+# Sauvegarde des cookies de session
+with open("cookies.json", "w") as outfile:
+    json.dump(like.cookies.get_dict(), outfile, indent=4)
+
+
+print('here')
 """Quelques tests sur quelques routes supplémentaires
 
 Note: le bearer token semble changer assez souvent, voir si le process de connexion complet règle le souci ?
