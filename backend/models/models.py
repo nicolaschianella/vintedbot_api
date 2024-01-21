@@ -25,19 +25,19 @@ class InputGetClothes(BaseModel):
     search_text: str = ""
     # "Catégorie" filter
     catalog_ids: str = ""
-    # "Couleur" field
+    # "Couleur" field (if multiple, separate them with a coma)
     color_ids: str = ""
-    # "Marque" field
+    # "Marque" field (if multiple, separate them with a coma)
     brand_ids: str = ""
-    # "Taille" filter
+    # "Taille" filter (if multiple, separate them with a coma)
     size_ids: str = ""
-    # "Matière" field
+    # "Matière" field (if multiple, separate them with a coma)
     material_ids: str = ""
     # Price from -> parameter only appears in API if value != ""
     price_from: str = ""
     # Price to -> parameter only appears in API if value != ""
     price_to: str = ""
-    # "Etat" field
+    # "Etat" field (if multiple, separate them with a coma)
     status_ids: str = ""
     # "Trier par" field
     order: str = "newest_first"
