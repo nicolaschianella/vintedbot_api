@@ -7,11 +7,12 @@
 # Created:   16 January 2024
 #
 ###############################################################################
+import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES
-from backend.utils.utils import define_session, set_cookies
+from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime
 import logging
 
 router = APIRouter(
@@ -35,7 +36,7 @@ async def get_clothes(input_filters: InputGetClothes):
     """
     logging.info(f"Getting clothes with filters: {input_filters}")
 
-    # price_from and price_to are a bit special -> excluded in request if empty (otherwise not response)
+    # price_from and price_to are a bit special -> excluded in request if empty (otherwise no response)
     input_filters_dict = input_filters.dict()
 
     if not input_filters_dict.get("price_from", None):
@@ -62,12 +63,12 @@ async def get_clothes(input_filters: InputGetClothes):
                 logging.info(f"Successfully retrieved clothes with filters: {input_filters}. "
                              f"Proceeding with formatting data")
 
-                # TODO: reformat clothes
+                output = json.dumps(reformat_clothes(response.json()["items"]), default=serialize_datetime)
 
                 return JSONResponse(
                     status_code=200,
                     content={
-                        "data": {"response": response.json()},
+                        "data": output,
                         "message": f"Clothes found with filters: {input_filters}",
                         "status": True
                     }
