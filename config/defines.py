@@ -9,6 +9,7 @@
 ###############################################################################
 
 
+########## Routes, header ##########
 # Base API URL
 VINTED_API_URL = f"https://www.vinted.fr/api/v2"
 # End point used to get clothes
@@ -22,3 +23,13 @@ HEADERS_GET_CLOTHES = {
 }
 # Vinted AUTH URL to get clothes
 VINTED_AUTH_URL = "https://www.vinted.fr/auth/token_refresh"
+
+########## MongoDB related ##########
+# MongoDB Host/Port
+MONGO_HOST_PORT = "mongodb://localhost:27017"
+# Main DB name to use
+DB_NAME = "guysvinted"
+# Collection containing requests
+# Keys: all filters (backend.models.models.InputGetClothes) + 'creation_date' (UTC) = when the request was created
+# + 'name' = unique name characterizing the request
+REQUESTS_COLL = "requests"
