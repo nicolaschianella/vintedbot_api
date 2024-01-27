@@ -11,9 +11,11 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes
-from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES
+from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
+                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime
 import logging
+from pymongo import MongoClient
 
 router = APIRouter(
     prefix="/api/operations",
@@ -86,3 +88,56 @@ async def get_clothes(input_filters: InputGetClothes):
                         "status": False
                     }
                 )
+
+
+@router.get("/get_requests", status_code=200, response_model=CustomResponse)
+async def get_requests():
+    """
+    Used to get all the clothes requests stored in MongoDB
+    :return: backend.models.models.CustomResponse, with data section being all the found requests (list of dict)
+    """
+    logging.info(f"Getting all the existing requests")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+
+    # Check MongoDB health state
+    try:
+        client.server_info()
+
+    except Exception as e:
+        logging.error(f"MongoDB is not alive, error {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"MongoDB is not alive, error: {str(e)}",
+                "status": False
+            },
+        )
+
+    # Find all the requests
+    curs = list(client[DB_NAME][REQUESTS_COLL].find())
+
+    # Case no requests available
+    if not curs:
+        logging.warning(f"No available requests in ({DB_NAME}, {REQUESTS_COLL})")
+        return JSONResponse(
+            status_code=404,
+            content={
+                "data": {},
+                "message": f"No available requests in ({DB_NAME}, {REQUESTS_COLL})",
+                "status": False
+            },
+        )
+
+    # Case where we have requests
+    logging.info(f"Found requests: {curs}")
+    return JSONResponse(
+        status_code=200,
+        content={
+            "data": {"requests": curs},
+            "message": "Successfully found requests",
+            "status": True
+        },
+    )
