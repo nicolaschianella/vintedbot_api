@@ -136,7 +136,7 @@ async def get_requests():
     return JSONResponse(
         status_code=200,
         content={
-            "data": {"requests": curs},
+            "data": {"requests": json.dumps(curs, default=serialize_datetime)},
             "message": "Successfully found requests",
             "status": True
         },
