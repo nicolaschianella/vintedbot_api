@@ -10,7 +10,9 @@
 from config.defines import HEADERS_GET_CLOTHES, VINTED_AUTH_URL
 import requests
 import logging
-from datetime import datetime, timezone
+import bson
+from datetime import datetime, timezone, date
+
 
 def define_session():
     """
@@ -107,3 +109,5 @@ def serialize_datetime(obj):
     """
     if isinstance(obj, datetime):
         return obj.isoformat()
+    elif isinstance(obj, bson.objectid.ObjectId):
+        return str(obj)
