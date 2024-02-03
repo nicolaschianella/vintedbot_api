@@ -39,3 +39,6 @@ To deploy the project on **guysmachine**, you will first need to own an authoriz
 - **HOST:PORT/api/operations/get_clothes**: retrieves Vinted clothes based on input filters
   - Input parameters: **backend.models.models.InputGetClothes**, the specified filters to apply (one search)
   - Returns: **backend.models.models.CustomResponse**, found and reformatted clothes in **data** key
+- **HOST:PORT/api/operations/get_requests**: retrieves all the requests stored in MongoDB
+  - No input parameters
+  - Returns: **backend.models.models.CustomResponse**, found and reformatted clothes in **data** dict, **requests** key
