@@ -10,7 +10,7 @@
 import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from backend.models.models import CustomResponse, InputGetClothes
+from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime
@@ -96,7 +96,7 @@ async def get_requests():
     Used to get all the clothes requests stored in MongoDB
     :return: backend.models.models.CustomResponse, with data section being all the found requests (list of dict)
     """
-    logging.info(f"Getting all the existing requests")
+    logging.info("Getting all the existing requests")
 
     # Instantiate MongoClient
     client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
@@ -141,3 +141,67 @@ async def get_requests():
             "status": True
         },
     )
+
+
+@router.post("/update_requests", status_code=200, response_model=CustomResponse)
+async def update_requests(input_filters: list[InputUpdateRequests]):
+    """
+    Used to update all the clothes requests stored in MongoDB
+    :return: backend.models.models.CustomResponse, with custom status_code if successful or not
+    """
+    logging.info(f"Updating all the existing requests, received: {input_filters}")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+
+    # Check MongoDB health state
+    try:
+        client.server_info()
+
+    except Exception as e:
+        logging.error(f"MongoDB is not alive, error {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"MongoDB is not alive, error: {str(e)}",
+                "status": False
+            },
+        )
+
+    try:
+        # Find previous requests to log them
+        curs = list(client[DB_NAME][REQUESTS_COLL].find())
+        logging.info(f"Existing requests: {curs}")
+
+        # Drop collection
+        client[DB_NAME][REQUESTS_COLL].drop()
+        logging.info(f"Successfully dropped existing requests in ({DB_NAME}, {REQUESTS_COLL})")
+
+        for input_filter in input_filters:
+            # Convert to dict
+            input_filter_dict = input_filter.dict()
+            # Insert into collection
+            client[DB_NAME][REQUESTS_COLL].insert_one(input_filter_dict)
+
+        logging.info(f"Successfully updated requests: {input_filters}")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {},
+                "message": "Success",
+                "status": True
+            },
+        )
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": "Internal Server Error",
+                "status": False
+            },
+        )
