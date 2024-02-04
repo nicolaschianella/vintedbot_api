@@ -50,6 +50,10 @@ class InputUpdateRequests(BaseModel):
     name: str = "DEFAULT"
     # Creation date
     creation_date: str = ""
+    # State: active or inactive
+    state: str = "active"
+    # Update date
+    updated: str = ""
     # Page number to get items from per search
     page: str = "1"
     # Number of items for this page to get per search
