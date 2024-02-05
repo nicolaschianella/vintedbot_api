@@ -16,6 +16,8 @@ from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES,
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime
 import logging
 from pymongo import MongoClient
+from datetime import datetime
+from bson.objectid import ObjectId
 
 router = APIRouter(
     prefix="/api/operations",
@@ -144,11 +146,12 @@ async def get_requests():
 
 
 @router.post("/update_requests", status_code=200, response_model=CustomResponse)
-async def update_requests(input_filters: list[InputUpdateRequests]):
+async def update_requests(input_filters: InputUpdateRequests):
     """
     Used to update all the clothes requests stored in MongoDB
     :return: backend.models.models.CustomResponse, with custom status_code if successful or not
     """
+    input_filters = input_filters.dict()
     logging.info(f"Updating all the existing requests, received: {input_filters}")
 
     # Instantiate MongoClient
@@ -174,17 +177,38 @@ async def update_requests(input_filters: list[InputUpdateRequests]):
         curs = list(client[DB_NAME][REQUESTS_COLL].find())
         logging.info(f"Existing requests: {curs}")
 
-        # Drop collection
-        client[DB_NAME][REQUESTS_COLL].drop()
-        logging.info(f"Successfully dropped existing requests in ({DB_NAME}, {REQUESTS_COLL})")
+        deleted, added, updated = input_filters["deleted"], input_filters["added"], input_filters["updated"]
 
-        for input_filter in input_filters:
-            # Convert to dict
-            input_filter_dict = input_filter.dict()
-            # Insert into collection
-            client[DB_NAME][REQUESTS_COLL].insert_one(input_filter_dict)
+        # Deleted requests
+        if deleted:
+            deleted_requests = []
+            for _id in deleted:
+                deleted_requests.extend(list(client[DB_NAME][REQUESTS_COLL].find({"_id": ObjectId(_id)})))
+                client[DB_NAME][REQUESTS_COLL].delete_one({"_id": ObjectId(_id)})
+            logging.info(f"Deleted requests: {deleted_requests}")
 
-        logging.info(f"Successfully updated requests: {input_filters}")
+        # Added requests
+        if added:
+            for item in added:
+                # Change creation_date and updated keys
+                item["creation_date"] = item["updated"] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+                client[DB_NAME][REQUESTS_COLL].insert_one(item)
+            logging.info(f"Added requests: {added}")
+
+        # Updated requests
+        if updated:
+            for item in updated:
+                # Change updated key
+                item["updated"] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+                _id = item["id"]
+                item.pop("id")
+                client[DB_NAME][REQUESTS_COLL].update_one({"_id": ObjectId(_id)}, {"$set": item})
+            logging.info(f"Updated requests: {updated}")
+
+        # Find current requests to log them
+        curs = list(client[DB_NAME][REQUESTS_COLL].find())
+
+        logging.info(f"Successfully updated requests. Current requests: {curs}")
 
         return JSONResponse(
             status_code=200,
