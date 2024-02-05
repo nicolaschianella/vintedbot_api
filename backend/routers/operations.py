@@ -192,6 +192,7 @@ async def update_requests(input_filters: InputUpdateRequests):
             for item in added:
                 # Change creation_date and updated keys
                 item["creation_date"] = item["updated"] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+                item.pop("id")
                 client[DB_NAME][REQUESTS_COLL].insert_one(item)
             logging.info(f"Added requests: {added}")
 
