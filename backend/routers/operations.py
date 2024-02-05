@@ -118,8 +118,8 @@ async def get_requests():
             },
         )
 
-    # Find all the requests
-    curs = list(client[DB_NAME][REQUESTS_COLL].find())
+    # Find active and inactive requests
+    curs = list(client[DB_NAME][REQUESTS_COLL].find({"$or": [{"state": "active"}, {"state": "inactive"}]}))
 
     # Case no requests available
     if not curs:
@@ -184,7 +184,10 @@ async def update_requests(input_filters: InputUpdateRequests):
             deleted_requests = []
             for _id in deleted:
                 deleted_requests.extend(list(client[DB_NAME][REQUESTS_COLL].find({"_id": ObjectId(_id)})))
-                client[DB_NAME][REQUESTS_COLL].delete_one({"_id": ObjectId(_id)})
+                client[DB_NAME][REQUESTS_COLL].update_one({"_id": ObjectId(_id)},
+                                                          {"$set": {"state": "deleted",
+                                                                    "updated": datetime.strftime(datetime.now(),
+                                                                                                 "%Y-%m-%d %H:%M:%S")}})
             logging.info(f"Deleted requests: {deleted_requests}")
 
         # Added requests
