@@ -8,6 +8,7 @@
 #
 ###############################################################################
 from pydantic import BaseModel
+from typing import List
 
 
 class CustomResponse(BaseModel):
@@ -45,7 +46,12 @@ class InputGetClothes(BaseModel):
     currency: str = "EUR"
 
 
-class InputUpdateRequests(BaseModel):
+class AddedUpdatedRequests(BaseModel):
+    """
+    Model wrapped in InputUpdateRequests to update requests
+    """
+    # MongoDB _id
+    id: str = ""
     # Request name
     name: str = "DEFAULT"
     # Creation date
@@ -80,3 +86,13 @@ class InputUpdateRequests(BaseModel):
     order: str = "newest_first"
     # Not a filter itself but necessary for the API to work
     currency: str = "EUR"
+
+
+class InputUpdateRequests(BaseModel):
+    # ids to delete
+    deleted: List[str] = []
+    # Rows to add
+    added: List[AddedUpdatedRequests] = []
+    # Rows to update
+    updated: List[AddedUpdatedRequests] = []
+
