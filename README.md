@@ -1,7 +1,5 @@
-# vintedbot
-This repo contains all the resources for our own Vinted bot project.
-
-The project is an API made to be used with the **streamlit_sales** frontend.
+# vintedbot_api
+This repo contains all the resources for our own Vinted API project.
 
 
 
@@ -33,12 +31,15 @@ To deploy the project on **guysmachine**, you will first need to own an authoriz
 
 # Available routes
 
-- **HOST:PORT/api/health/backend**: checks if API is alive. To check if the API is alive using **PORT**=8000, you can run **requests/health.sh**
+- **HOST:PORT/api/health/backend (GET)**: checks if API is alive. To check if the API is alive using **PORT**=8000, you can run **requests/health.sh**
   - No input parameters
   - Returns: **backend.models.models.CustomResponse**
-- **HOST:PORT/api/operations/get_clothes**: retrieves Vinted clothes based on input filters
+- **HOST:PORT/api/operations/get_clothes (GET)**: retrieves Vinted clothes based on input filters
   - Input parameters: **backend.models.models.InputGetClothes**, the specified filters to apply (one search)
   - Returns: **backend.models.models.CustomResponse**, found and reformatted clothes in **data** key
-- **HOST:PORT/api/operations/get_requests**: retrieves all the requests stored in MongoDB
+- **HOST:PORT/api/operations/get_requests (GET)**: retrieves all the requests stored in MongoDB
   - No input parameters
   - Returns: **backend.models.models.CustomResponse**, found and reformatted clothes in **data** dict, **requests** key
+- **HOST:PORT/api/operations/update_requests (POST)**: updates requests in MongoDB
+  - Input parameters: **backend.models.models.InputUpdateRequests**, the requests to update
+  - Returns: **backend.models.models.CustomResponse**, no data and a small message indicating success or not
