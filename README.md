@@ -15,6 +15,7 @@ This repo contains all the resources for our own Vinted API project.
 - Run whatever **run/run_*.sh** file to install the required **venv** and run the API in background. Associated log file is **vinted_bot_*.log** (UTC timezone)
 - The API will then start on **HOST**=127.0.0.1, **PORT**=8000 for prod, 5000 for dev, 5001 for hugo, 5002 for nico
 - Useful command to kill the API: $ps -aux | grep 'backend' to retrieve **PID**, then $kill -9 PID
+- Swagger UI is accessible at **HOST:PORT/docs**
 
 
 
