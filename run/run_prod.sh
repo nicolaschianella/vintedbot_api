@@ -20,4 +20,4 @@ pip install -U pip
 pip install -r requirements.txt
 echo "DONE!"
 echo "Running main.py script - prod mode (port 8000)"
-nohup python backend/main.py -p 8000 -l vinted_bot_prod.log &
+nohup python backend/main.py -p 8000 -l vintedbot_api_prod.log &
