@@ -173,6 +173,8 @@ async def update_requests(input_filters: InputUpdateRequests):
         )
 
     try:
+        # Keep track of ids
+        ids = {}
         # Find previous requests to log them
         curs = list(client[DB_NAME][REQUESTS_COLL].find())
         logging.info(f"Existing requests: {curs}")
@@ -188,25 +190,32 @@ async def update_requests(input_filters: InputUpdateRequests):
                                                           {"$set": {"state": "deleted",
                                                                     "updated": datetime.strftime(datetime.now(),
                                                                                                  "%Y-%m-%d %H:%M:%S")}})
+            ids["deleted"] = deleted
             logging.info(f"Deleted requests: {deleted_requests}")
 
         # Added requests
         if added:
+            added_ids = []
             for item in added:
                 # Change creation_date and updated keys
                 item["creation_date"] = item["updated"] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
                 item.pop("id")
-                client[DB_NAME][REQUESTS_COLL].insert_one(item)
+                _id = client[DB_NAME][REQUESTS_COLL].insert_one(item)
+                added_ids.append(str(_id.inserted_id))
+            ids["added"] = added_ids
             logging.info(f"Added requests: {added}")
 
         # Updated requests
         if updated:
+            updated_ids = []
             for item in updated:
                 # Change updated key
                 item["updated"] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
                 _id = item["id"]
                 item.pop("id")
                 client[DB_NAME][REQUESTS_COLL].update_one({"_id": ObjectId(_id)}, {"$set": item})
+                updated_ids.append(_id)
+            ids["updated"] = updated_ids
             logging.info(f"Updated requests: {updated}")
 
         # Find current requests to log them
@@ -217,7 +226,7 @@ async def update_requests(input_filters: InputUpdateRequests):
         return JSONResponse(
             status_code=200,
             content={
-                "data": {},
+                "data": json.dumps(ids),
                 "message": "Success",
                 "status": True
             },
