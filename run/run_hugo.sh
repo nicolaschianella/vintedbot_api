@@ -20,4 +20,4 @@ pip install -U pip
 pip install -r requirements.txt
 echo "DONE!"
 echo "Running main.py script - hugo mode (port 5001)"
-nohup python backend/main.py -p 5001 -l vinted_bot_hugo.log &
+nohup python backend/main.py -p 5001 -l vintedbot_api_hugo.log &

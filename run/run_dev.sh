@@ -20,4 +20,4 @@ pip install -U pip
 pip install -r requirements.txt
 echo "DONE!"
 echo "Running main.py script - dev mode (port 5000)"
-nohup python backend/main.py -p 5000 -l vinted_bot_dev.log &
+nohup python backend/main.py -p 5000 -l vintedbot_api_dev.log &

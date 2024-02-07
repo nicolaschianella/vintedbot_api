@@ -20,4 +20,4 @@ pip install -U pip
 pip install -r requirements.txt
 echo "DONE!"
 echo "Running main.py script - nico mode (port 5002)"
-nohup python backend/main.py -p 5002 -l vinted_bot_nico.log &
+nohup python backend/main.py -p 5002 -l vintedbot_api_nico.log &

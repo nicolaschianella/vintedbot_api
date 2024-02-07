@@ -19,7 +19,7 @@ from backend.routers import health, operations
 if __name__ == "__main__":
 
     # Get arguments
-    parser = argparse.ArgumentParser(description="VintedBot")
+    parser = argparse.ArgumentParser(description="VintedBotAPI")
     parser.add_argument(
         "-p",
         "--port",
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # Define app, include routes
     app = FastAPI(
-        title="VintedBot",
+        title="VintedBotAPI",
         description="Auto-manage purchases and sales from Vinted",
         version="1.0",
         license="Guys Copyright"

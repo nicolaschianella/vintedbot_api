@@ -8,13 +8,15 @@
 #
 ###############################################################################
 from config.defines import HEADERS_GET_CLOTHES, VINTED_AUTH_URL
+from fastapi.responses import JSONResponse
+from pymongo import MongoClient
 import requests
 import logging
 import bson
 from datetime import datetime, timezone, date
 
 
-def define_session():
+def define_session() -> requests.Session:
     """
     Generic function to define a new user session and set headers
 
@@ -26,7 +28,7 @@ def define_session():
 
     return session
 
-def set_cookies(session):
+def set_cookies(session: requests.Session) -> requests.Session:
     """
     Sets AUTH cookie to session, to allow users to get Vinted clothes
     Args:
@@ -46,7 +48,7 @@ def set_cookies(session):
 
     return session
 
-def reformat_clothes(clothes):
+def reformat_clothes(clothes: list[dict]) -> list[dict]:
     """
     Reformat clothes gotten from get_clothes route to keep only desirable information
     Args:
@@ -111,3 +113,24 @@ def serialize_datetime(obj):
         return obj.isoformat()
     elif isinstance(obj, bson.objectid.ObjectId):
         return str(obj)
+
+def check_mongo(client: MongoClient):
+    """
+    Checks Mongo helath state and returns an error in case
+    :param client: MongoClient to check
+    :return: None if OK, JSONResponse status_code 500 if error
+    """
+    # Check MongoDB health state
+    try:
+        client.server_info()
+
+    except Exception as e:
+        logging.error(f"MongoDB is not alive, error {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"MongoDB is not alive, error: {str(e)}",
+                "status": False
+            },
+        )
