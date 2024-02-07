@@ -96,3 +96,13 @@ class InputUpdateRequests(BaseModel):
     # Rows to update
     updated: List[AddedUpdatedRequests] = []
 
+
+class PostAssociations(BaseModel):
+    # request_id
+    request_id: str
+    # request name
+    request_name: str
+    # channel_id
+    channel_id: str
+    # channel name
+    channel_name: str
