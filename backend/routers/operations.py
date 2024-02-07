@@ -161,8 +161,7 @@ async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
                 deleted_requests.extend(list(client[DB_NAME][REQUESTS_COLL].find({"_id": ObjectId(_id)})))
                 client[DB_NAME][REQUESTS_COLL].update_one({"_id": ObjectId(_id)},
                                                           {"$set": {"state": "deleted",
-                                                                    "updated": datetime.strftime(datetime.now(),
-                                                                                                 "%Y-%m-%d %H:%M:%S")}})
+                                                                    "updated": datetime.now()}})
             ids["deleted"] = deleted
             logging.info(f"Deleted requests: {deleted_requests}")
 
@@ -171,7 +170,7 @@ async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
             added_ids = []
             for item in added:
                 # Change creation_date and updated keys
-                item["creation_date"] = item["updated"] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+                item["creation_date"] = item["updated"] = datetime.now()
                 item.pop("id")
                 _id = client[DB_NAME][REQUESTS_COLL].insert_one(item)
                 added_ids.append(str(_id.inserted_id))
@@ -183,7 +182,7 @@ async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
             updated_ids = []
             for item in updated:
                 # Change updated key
-                item["updated"] = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+                item["updated"] = datetime.now()
                 _id = item["id"]
                 item.pop("id")
                 client[DB_NAME][REQUESTS_COLL].update_one({"_id": ObjectId(_id)}, {"$set": item})
@@ -229,6 +228,9 @@ async def add_association(association: PostAssociations):
     # Instantiate MongoClient
     client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
     check_mongo(client)
+
+    # Add creation_date
+    association_dict["creation_date"] = datetime.now()
 
     # Insertion
     client[DB_NAME][ASSOCIATIONS_COLL].insert_one(association_dict)
