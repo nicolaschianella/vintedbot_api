@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, PostAssociations
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
-                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL
+                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
 import logging
 from pymongo import MongoClient
@@ -215,3 +215,31 @@ async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
                 "status": False
             },
         )
+
+
+@router.post("/add_association", status_code=200, response_model=CustomResponse)
+async def add_association(association: PostAssociations):
+    """
+    Used to add an association between clothe request_id and discord channel_id
+    :return: backend.models.models.CustomResponse, with custom status_code if successful or not
+    """
+    association_dict = association.dict()
+    logging.info(f"Starting association insertion: {association_dict}")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    # Insertion
+    client[DB_NAME][ASSOCIATIONS_COLL].insert_one(association_dict)
+
+    # Case where we have requests
+    logging.info(f"Inserted association: {association_dict}")
+    return JSONResponse(
+        status_code=200,
+        content={
+            "data": {},
+            "message": "Success",
+            "status": True
+        },
+    )
