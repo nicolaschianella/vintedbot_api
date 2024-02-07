@@ -97,7 +97,7 @@ class InputUpdateRequests(BaseModel):
     updated: List[AddedUpdatedRequests] = []
 
 
-class PostAssociations(BaseModel):
+class AddAssociations(BaseModel):
     # request_id
     request_id: str
     # request name
