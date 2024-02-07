@@ -10,10 +10,10 @@
 import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests
+from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, PostAssociations
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL
-from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime
+from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
 import logging
 from pymongo import MongoClient
 from datetime import datetime
@@ -28,7 +28,7 @@ router = APIRouter(
 
 
 @router.get("/get_clothes", status_code=200, response_model=CustomResponse)
-async def get_clothes(input_filters: InputGetClothes):
+async def get_clothes(input_filters: InputGetClothes) -> CustomResponse:
     """
     Used to get Vinted clothes based on specific filters
 
@@ -93,7 +93,7 @@ async def get_clothes(input_filters: InputGetClothes):
 
 
 @router.get("/get_requests", status_code=200, response_model=CustomResponse)
-async def get_requests():
+async def get_requests() -> CustomResponse:
     """
     Used to get all the clothes requests stored in MongoDB
     :return: backend.models.models.CustomResponse, with data section being all the found requests (list of dict)
@@ -102,21 +102,7 @@ async def get_requests():
 
     # Instantiate MongoClient
     client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
-
-    # Check MongoDB health state
-    try:
-        client.server_info()
-
-    except Exception as e:
-        logging.error(f"MongoDB is not alive, error {e}")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "data": {},
-                "message": f"MongoDB is not alive, error: {str(e)}",
-                "status": False
-            },
-        )
+    check_mongo(client)
 
     # Find active and inactive requests
     curs = list(client[DB_NAME][REQUESTS_COLL].find({"$or": [{"state": "active"}, {"state": "inactive"}]}))
@@ -146,31 +132,18 @@ async def get_requests():
 
 
 @router.post("/update_requests", status_code=200, response_model=CustomResponse)
-async def update_requests(input_filters: InputUpdateRequests):
+async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
     """
     Used to update all the clothes requests stored in MongoDB
-    :return: backend.models.models.CustomResponse, with custom status_code if successful or not
+    :return: backend.models.models.CustomResponse, with custom status_code if successful or not, and concerned ids
+    in data section
     """
     input_filters = input_filters.dict()
     logging.info(f"Updating all the existing requests, received: {input_filters}")
 
     # Instantiate MongoClient
     client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
-
-    # Check MongoDB health state
-    try:
-        client.server_info()
-
-    except Exception as e:
-        logging.error(f"MongoDB is not alive, error {e}")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "data": {},
-                "message": f"MongoDB is not alive, error: {str(e)}",
-                "status": False
-            },
-        )
+    check_mongo(client)
 
     try:
         # Keep track of ids
