@@ -33,3 +33,5 @@ DB_NAME = "guysvinted"
 # Keys: all filters (backend.models.models.InputGetClothes) + 'creation_date' (UTC) = when the request was created
 # + 'name' = unique name characterizing the request
 REQUESTS_COLL = "requests"
+# Collection containing associations {clothe_request_id: discord_channel_id}
+ASSOCIATIONS_COLL = "associations"
