@@ -10,9 +10,9 @@
 import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations
+from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
-                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL
+                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
 import logging
 from pymongo import MongoClient
@@ -309,3 +309,67 @@ async def get_active_requests_and_channels() -> CustomResponse:
                 "status": False
             },
         )
+
+
+@router.get("/get_user_infos", status_code=200, response_model=CustomResponse)
+async def get_user_infos(user: User) -> CustomResponse:
+    """
+    Returns number of stars and number of reviews of a user
+    Args:
+        user: backend.models.models.User, the user to get the infos from
+
+    Returns: backend.models.models.CustomResponse, with data section being the number of stars and number of reviews
+
+    """
+    logging.info(f"Getting infos from user: {user}")
+
+    # Format base API route to call
+    url = f"{VINTED_API_URL}/{VINTED_USER_ENDPOINT}"
+
+    # Instantiate session
+    session = define_session()
+    session = set_cookies(session)
+
+    # Try to call the API
+    for attempt in range(NB_RETRIES):
+        with session.get(url) as response:
+            if response.status_code != 200 and attempt < NB_RETRIES:
+                logging.warning(f"Could not get infos from user: {user}, attempt: {attempt+1}")
+                session = set_cookies(session)
+
+            elif response.status_code == 200:
+                logging.info(f"Successfully retrieved user infos for user: {user}")
+
+                number_reviews = response.json()["users"][0]["feedback_count"]
+                number_stars = float(response.json()["users"][0]["feedback_reputation"])
+
+                # number_stars is a number between 0 and 1 -> convert to 1, 2, 3, 4 or 5 stars
+                number_stars = round(5 * number_stars)
+
+                logging.info(f"User: {user}, found number of reviews: {number_reviews}, "
+                             f"number of stars: {number_stars}")
+
+                output = json.dumps({"number_reviews": number_reviews,
+                                     "number_stars": number_stars})
+
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "data": output,
+                        "message": f"Infos for user {user}",
+                        "status": True
+                    }
+                )
+
+            else:
+                logging.error(f"Could not get infos for user: {user}, max attempt reached. "
+                              f"Full response: {response.json()}")
+
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "data": {},
+                        "message": f"Could not get infos for user: {user}, max attempt reached. ",
+                        "status": False
+                    }
+                )
