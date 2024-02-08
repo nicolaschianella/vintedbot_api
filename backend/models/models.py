@@ -106,3 +106,8 @@ class AddAssociations(BaseModel):
     channel_id: str
     # channel name
     channel_name: str
+
+
+class User(BaseModel):
+    # user_id
+    user_id: str
