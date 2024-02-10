@@ -10,11 +10,14 @@
 import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User
+from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
+                                  Clothe
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
 import logging
+import time
+from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
 from bson.objectid import ObjectId
@@ -373,3 +376,71 @@ async def get_user_infos(user: User) -> CustomResponse:
                         "status": False
                     }
                 )
+
+
+@router.get("/get_images_url", status_code=200, response_model=CustomResponse)
+async def get_images_url(clothe: Clothe) -> CustomResponse:
+    """
+    Returns all images URLs found for a given clothe URL
+    Args:
+        clothe: backend.models.models.Clothe, clothe object containing the URL to scrape images from
+
+    Returns: backend.models.models.CustomResponse, with data section containing all found images URLs
+
+    Note: using this method, we can only scrape the displayed carousel images. In case the item contains more
+    than 5 images, they cannot be retrieved using this technique, since remaining images appear in the HTML code
+    only after clicking on whatever displayed image.
+
+    """
+    logging.info(f"Getting images from URL: {clothe}")
+
+    # Stopwatch
+    start = time.time()
+
+    # Instantiate session
+    session = define_session()
+
+    # Request page
+    data = session.get(clothe.dict()["clothe_url"])
+
+    # Retrieve page HTML
+    html = data.text
+
+    # Find images
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # This is hard-coded since if page changes, it might be at a very different location anyway...
+    carousel = soup.find("div", {"class": "item-photos"})
+
+    try:
+        images = carousel.find_all("img")
+        images_url = []
+
+        for img in images:
+            src = img.get("src")
+            images_url.append(src)
+
+        end = time.time()
+
+        logging.info(f"Found {len(images_url)} images in {end - start} seconds. URLs: {images_url}")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {"images_url": images_url},
+                "message": f"Images for clothe {clothe}",
+                "status": True
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"There was an error acquiring images for {clothe}: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"Could not get images for {clothe}",
+                "status": False
+            }
+        )
