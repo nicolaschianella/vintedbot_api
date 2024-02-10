@@ -4,54 +4,58 @@
         "longitude": 5.3665547
     },
     {
-        "id": 0,
+        "id": 1,
         "type": "P",
         "presentationPointType": "P",
-        "latitude": "43.31606890000",
-        "longitude": "5.36655930000",
-        "name": "RELAIS CHRONOPOST MARSEILLE CENTRE",
-        "identifier": "5027C",
+        "latitude": "43.30646200000",
+        "longitude": "5.37373700000",
+        "name": "KIOSQUE DE LA PLACE",
+        "identifier": "6671B",
         "classForLi": false,
         "classHidden": false,
-        "address": "14 RUE D ANTHOINE",
-        "zipcode": "13002",
+        "address": "3 PLACE DE STRASBOURG",
+        "zipcode": "13003",
         "city": "Marseille",
         "listopeninghours": [
             {
-                "openinghours": "09:00-12:00",
+                "openinghours": "08:30-12:00 12:00-19:00",
+                "day": 7
+            },
+            {
+                "openinghours": "08:30-12:00 12:00-19:00",
                 "day": 6
             },
             {
-                "openinghours": "09:00-12:00 14:00-18:00",
+                "openinghours": "08:30-12:00 12:00-19:00",
                 "day": 5
             },
             {
-                "openinghours": "09:00-12:00 14:00-18:00",
+                "openinghours": "08:30-12:00 12:00-19:00",
                 "day": 4
             },
             {
-                "openinghours": "09:00-12:00 14:00-18:00",
+                "openinghours": "08:30-12:00 12:00-19:00",
                 "day": 3
             },
             {
-                "openinghours": "09:00-12:00 14:00-18:00",
+                "openinghours": "08:30-12:00 12:00-19:00",
                 "day": 2
             },
             {
-                "openinghours": "09:00-12:00 14:00-18:00",
+                "openinghours": "08:30-12:00 12:00-19:00",
                 "day": 1
             }
         ],
-        "day1": "09:00-12:00 14:00-18:00",
-        "day2": "09:00-12:00 14:00-18:00",
-        "day3": "09:00-12:00 14:00-18:00",
-        "day4": "09:00-12:00 14:00-18:00",
-        "day5": "09:00-12:00 14:00-18:00",
-        "day6": "09:00-12:00",
-        "day7": "ferm\u00e9",
+        "day1": "08:30-12:00 12:00-19:00",
+        "day2": "08:30-12:00 12:00-19:00",
+        "day3": "08:30-12:00 12:00-19:00",
+        "day4": "08:30-12:00 12:00-19:00",
+        "day5": "08:30-12:00 12:00-19:00",
+        "day6": "08:30-12:00 12:00-19:00",
+        "day7": "08:30-12:00 12:00-19:00",
         "closingschedules": null,
-        "tooltips": "<div id='googleInfoBox0' class='googleInfoBox'>\n\t<div id='typePDRPopUp1' class='monChronoRelais'></div>\n    <div id='titlePopUp1' class=titleOrange'>\n\t\t\n\t\t<h3>RELAIS CHRONOPOST MARSEILLE CENTRE</h3>\n\t\t<div id='infosAdressePopUp1' class='infos2'>\n\t\t\t<span id=\"adresse1PopUp1\">14 RUE D ANTHOINE</span><br>\n\t\t\t<span id=\"adresse4PopUp1\">13002 Marseille</span><br>\n\t\t</div>\n\t\t<p class=\"distance\">Distance : Environ 756 m </p>\n\t\t\n\t\t<p class=\"codePointRelais\">5027C</p>\n\t</div>\n</div>\n<div class=\"spacer\"></div>\n<div class=\"tableauHorraire\">\n\t<h3>Horaires</h3>\n\t<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\">\n\t\t<tbody>\n\t\t\t<tr class=\"gr\">\n\t\t\t\t<td>Lundi&nbsp;:<br></td>\n\t        \t<td id=\"horaireLundi1\">09:00-12:00 14:00-18:00<br></td>\n\t       \t</tr>\n\t        <tr class=\"bl\">\n\t        \t<td>Mardi&nbsp;:<br></td>\n\t            <td id=\"horaireMardi1\">09:00-12:00 14:00-18:00<br></td>\n\t        </tr>\n\t\t\t<tr class=\"gr\">\n\t\t\t\t<td>Mercredi&nbsp;:<br></td>\n\t            <td id=\"horaireMercredi1\">09:00-12:00 14:00-18:00<br></td>\n\t\t\t</tr>\n\t\t\t<tr class=\"bl\">\n\t\t\t\t<td>Jeudi&nbsp;:<br></td>\n\t\t\t\t<td id=\"horaireJeudi1\">09:00-12:00 14:00-18:00<br></td>\n\t        </tr>\n\t        <tr class=\"gr\">\n\t\t\t\t<td>Vendredi&nbsp;:<br></td>\n\t            <td id=\"horaireVendredi1\">09:00-12:00 14:00-18:00<br></td>\n\t\t\t</tr>\n\t\t\t<tr class=\"bl\">\n\t\t\t\t<td>Samedi&nbsp;:<br></td>\n\t\t\t\t<td id=\"horaireSamedi1\">09:00-12:00<br></td>\n\t\t\t</tr>\n\t\t\t<tr class=\"gr\">\n\t\t\t\t<td>Dimanche&nbsp;:</td>\n\t\t\t\t<td id=\"horaireDimanche1\">ferm\u00e9<br></td>\n\t\t\t</tr>\n\t\t</tbody>\n\t</table>\n</div>\n\n\n\n\n\n",
-        "distanceInMeters": "Environ 756 m",
+        "tooltips": "<div id='googleInfoBox1' class='googleInfoBox'>\n\t<div id='typePDRPopUp1' class='monChronoRelais'></div>\n    <div id='titlePopUp1' class=titleOrange'>\n\t\t\n\t\t<h3>KIOSQUE DE LA PLACE</h3>\n\t\t<div id='infosAdressePopUp1' class='infos2'>\n\t\t\t<span id=\"adresse1PopUp1\">3 PLACE DE STRASBOURG</span><br>\n\t\t\t<span id=\"adresse4PopUp1\">13003 Marseille</span><br>\n\t\t</div>\n\t\t<p class=\"distance\">Distance : Environ 859 m </p>\n\t\t\n\t\t<p class=\"codePointRelais\">6671B</p>\n\t</div>\n</div>\n<div class=\"spacer\"></div>\n<div class=\"tableauHorraire\">\n\t<h3>Horaires</h3>\n\t<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\">\n\t\t<tbody>\n\t\t\t<tr class=\"gr\">\n\t\t\t\t<td>Lundi&nbsp;:<br></td>\n\t        \t<td id=\"horaireLundi1\">08:30-12:00 12:00-19:00<br></td>\n\t       \t</tr>\n\t        <tr class=\"bl\">\n\t        \t<td>Mardi&nbsp;:<br></td>\n\t            <td id=\"horaireMardi1\">08:30-12:00 12:00-19:00<br></td>\n\t        </tr>\n\t\t\t<tr class=\"gr\">\n\t\t\t\t<td>Mercredi&nbsp;:<br></td>\n\t            <td id=\"horaireMercredi1\">08:30-12:00 12:00-19:00<br></td>\n\t\t\t</tr>\n\t\t\t<tr class=\"bl\">\n\t\t\t\t<td>Jeudi&nbsp;:<br></td>\n\t\t\t\t<td id=\"horaireJeudi1\">08:30-12:00 12:00-19:00<br></td>\n\t        </tr>\n\t        <tr class=\"gr\">\n\t\t\t\t<td>Vendredi&nbsp;:<br></td>\n\t            <td id=\"horaireVendredi1\">08:30-12:00 12:00-19:00<br></td>\n\t\t\t</tr>\n\t\t\t<tr class=\"bl\">\n\t\t\t\t<td>Samedi&nbsp;:<br></td>\n\t\t\t\t<td id=\"horaireSamedi1\">08:30-12:00 12:00-19:00<br></td>\n\t\t\t</tr>\n\t\t\t<tr class=\"gr\">\n\t\t\t\t<td>Dimanche&nbsp;:</td>\n\t\t\t\t<td id=\"horaireDimanche1\">08:30-12:00 12:00-19:00<br></td>\n\t\t\t</tr>\n\t\t</tbody>\n\t</table>\n</div>\n\n\n\n\n\n",
+        "distanceInMeters": "Environ 859 m",
         "dateAvailiable": null,
         "showDeliveryHelpAgency": true,
         "searchType": "P",
@@ -62,61 +66,74 @@
         "zca": false
     },
     {
-        "Numero": 22606,
+        "Numero": 24018,
         "CodeAgence": 648,
         "Adresse": {
-            "Libelle": "LOCKER 24/7 PARKING MASSABO MAR",
-            "AdresseLigne1": "3 RUE FRANCOIS MASSABO",
-            "CodePostal": "13002",
+            "Libelle": "JOY TECH 13001",
+            "AdresseLigne1": "56 RUE PUVIS DE CHAVANNES",
+            "CodePostal": "13001",
             "Ville": "MARSEILLE",
             "Pays": {
                 "Code": "FR",
                 "Libelle": "France",
                 "CodeIso": "FR"
             },
-            "Latitude": 43.3051312,
-            "Longitude": 5.3711496
+            "Latitude": 43.2994978,
+            "Longitude": 5.3730125
         },
         "Conges": [],
         "Horaires": [
             {
-                "HeureOuvertureAM": "00:01:00",
-                "HeureFermetureAM": "23:59:00",
+                "HeureOuvertureAM": "10:30:00",
+                "HeureFermetureAM": "13:30:00",
+                "HeureOuverturePM": "15:00:00",
+                "HeureFermeturePM": "18:30:00",
                 "JourSemaine": 1
             },
             {
-                "HeureOuvertureAM": "00:01:00",
-                "HeureFermetureAM": "23:59:00",
+                "HeureOuvertureAM": "10:30:00",
+                "HeureFermetureAM": "13:30:00",
+                "HeureOuverturePM": "15:00:00",
+                "HeureFermeturePM": "18:30:00",
                 "JourSemaine": 2
             },
             {
-                "HeureOuvertureAM": "00:01:00",
-                "HeureFermetureAM": "23:59:00",
+                "HeureOuvertureAM": "10:30:00",
+                "HeureFermetureAM": "13:30:00",
+                "HeureOuverturePM": "15:00:00",
+                "HeureFermeturePM": "18:30:00",
                 "JourSemaine": 3
             },
             {
-                "HeureOuvertureAM": "00:01:00",
-                "HeureFermetureAM": "23:59:00",
+                "HeureOuvertureAM": "10:30:00",
+                "HeureFermetureAM": "12:30:00",
+                "HeureOuverturePM": "15:00:00",
+                "HeureFermeturePM": "18:30:00",
                 "JourSemaine": 4
             },
             {
-                "HeureOuvertureAM": "00:01:00",
-                "HeureFermetureAM": "23:59:00",
+                "HeureOuvertureAM": "10:30:00",
+                "HeureFermetureAM": "12:30:00",
+                "HeureOuverturePM": "15:00:00",
+                "HeureFermeturePM": "18:30:00",
                 "JourSemaine": 5
             },
             {
-                "HeureOuvertureAM": "00:01:00",
-                "HeureFermetureAM": "23:59:00",
+                "HeureOuvertureAM": "10:30:00",
+                "HeureFermetureAM": "18:30:00",
                 "JourSemaine": 6
             },
             {
-                "HeureOuvertureAM": "00:01:00",
-                "HeureFermetureAM": "23:59:00",
                 "JourSemaine": 0
             }
         ],
-        "Services": [],
+        "Services": [
+            {
+                "Code": "PRINT",
+                "Libelle": "Impression Etiquette Point Relais"
+            }
+        ],
         "EstPIS": false,
-        "CodeNature": "C"
+        "CodeNature": "1"
     }
 ]

@@ -93,12 +93,13 @@ s.headers = {
     'x-csrf-token': csrfToken,
 }
 
-params_buy = {"initiator": "buy", "item_id": "4071301307", "opposite_user_id": "180061219"}
+params_buy = {"initiator": "buy", "item_id": "4071301307", "opposite_user_id": "171980102"}
 
 buy = s.post("https://www.vinted.fr/api/v2/conversations", data=json.dumps(params_buy), cookies=cookies)
 print('buy : ', buy.status_code)
 
 transaction_id = re.search(r'"transaction":{"id":([^"]+),"',buy.text).group(1)
+
 
 s.headers = {
     'authority': 'www.vinted.fr',
@@ -126,7 +127,7 @@ s.headers = {
 checkout = s.put(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout', cookies=buy.cookies.get_dict())
 print('checkout :', checkout.status_code)
 
-uuid, root_uuid = f.fit_uuid(checkout.text)
+rate_uuid, root_rate_uuid = f.fit_uuid(checkout.text)
 # print(uuid, root_uuid)
 
 s.headers = {
@@ -149,6 +150,7 @@ s.headers = {
     'x-csrf-token': csrfToken,
     'x-money-object': 'true',
 }
+
 params = {
     'country_code': 'FR',
     'latitude': pick_up_info[0]['latitude'],
@@ -186,60 +188,62 @@ s.headers = {
 }
 
 new_data = {
-    'transaction': {
-        'shipment': {
-            'package_type_id': trans_code,
-            'pickup_point_code': pup_code,
-            'rate_uuid': uuid,
-            'point_uuid': new_uuid,
-            'root_rate_uuid': root_uuid,
+    "transaction":{
+        "shipment":{
+            "package_type_id":trans_code,
+            "pickup_point_code":pup_code,
+            "rate_uuid":rate_uuid,
+            "point_uuid":new_uuid,
+            "root_rate_uuid":root_rate_uuid
         },
-        'buyer_debit': {},
-        'offline_verification': {},
-    },
+        "buyer_debit":{},
+        "offline_verification":{}
+    }
 }
 
-new_infos = s.put(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout',data=new_data,cookies=pickup.cookies.get_dict())
+new_infos = s.put(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout',data=json.dumps(new_data),cookies=pickup.cookies.get_dict())
 
 print('update : ', new_infos.status_code)
 
-# checksum = re.search(r'"checksum":"([^"]+)"',new_infos.text).group(1)
-#
-# #### PAYMENT
-#
-# s.headers = {
-#     'authority': 'www.vinted.fr',
-#     'accept': 'application/json, text/plain, */*',
-#     'accept-language': 'fr',
-#     'content-type': 'application/json',
-#     'origin': 'https://www.vinted.fr',
-#     'referer': f'https://www.vinted.fr/checkout?transaction_id={transaction_id}',
-#     'sec-ch-device-memory': '8',
-#     'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
-#     'sec-ch-ua-arch': '"x86"',
-#     'sec-ch-ua-full-version-list': '"Not.A/Brand";v="8.0.0.0", "Chromium";v="114.0.5735.106", "Google Chrome";v="114.0.5735.106"',
-#     'sec-ch-ua-mobile': '?0',
-#     'sec-ch-ua-model': '""',
-#     'sec-ch-ua-platform': '"Linux"',
-#     'sec-fetch-dest': 'empty',
-#     'sec-fetch-mode': 'cors',
-#     'sec-fetch-site': 'same-origin',
-#     'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-#     'x-anon-id': req.cookies.get_dict()['anon_id'],
-#     'x-csrf-token': csrfToken,
-# }
-#
-# params_pay = {"checksum":f"{checksum}",
-#              "browser_attributes":{
-#                  "language":"en-US",
-#                  "color_depth":24,
-#                  "java_enabled":"false",
-#                  "screen_height":1080,
-#                  "screen_width":1920,
-#                  "timezone_offset":-60}
-#              }
-#
-# pay = s.post(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout/payment',data=json.dumps(params_pay),cookies = checkout.cookies.get_dict())
-#
-#
-# print('pay : ', pay.status_code)
+checksum = re.search(r'"checksum":"([^"]+)"',new_infos.text).group(1)
+
+print(checksum)
+
+#### PAYMENT
+
+s.headers = {
+    'authority': 'www.vinted.fr',
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'fr',
+    'content-type': 'application/json',
+    'origin': 'https://www.vinted.fr',
+    'referer': f'https://www.vinted.fr/checkout?transaction_id={transaction_id}',
+    'sec-ch-device-memory': '8',
+    'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+    'sec-ch-ua-arch': '"x86"',
+    'sec-ch-ua-full-version-list': '"Not.A/Brand";v="8.0.0.0", "Chromium";v="114.0.5735.106", "Google Chrome";v="114.0.5735.106"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-model': '""',
+    'sec-ch-ua-platform': '"Linux"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+    'x-anon-id': req.cookies.get_dict()['anon_id'],
+    'x-csrf-token': csrfToken,
+}
+
+params_pay = {"checksum":f"{checksum}",
+             "browser_attributes":{
+                 "language":"en-US",
+                 "color_depth":24,
+                 "java_enabled":"false",
+                 "screen_height":1080,
+                 "screen_width":1920,
+                 "timezone_offset":-60}
+             }
+
+pay = s.post(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout/payment',data=json.dumps(params_pay),cookies = checkout.cookies.get_dict())
+
+
+print('pay : ', pay.status_code)

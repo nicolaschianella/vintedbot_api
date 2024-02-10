@@ -1,12 +1,14 @@
 import json
 
 def fit_uuid(text) :
-    uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["selected_rate_uuid"]
-    points = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_options"]
-    for p in points :
-        if p["rate_uuid"] == uuid :
-            root_uuid = p["root_rate_uuid"]
-    return(uuid, root_uuid)
+    # uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["selected_rate_uuid"]
+    # points = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_options"]
+    # for p in points :
+    #     if p["rate_uuid"] == uuid :
+    #         root_uuid = p["root_rate_uuid"]
+    rate_uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_option"]["rate_uuid"]
+    root_rate_uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_option"]["root_rate_uuid"]
+    return(rate_uuid, root_rate_uuid)
 
 def code_pup(p):
     if p['point']['carrier_id'] == 4:
@@ -16,6 +18,7 @@ def code_pup(p):
     else :
         m = 0
     return(m)
+
 def fit_pup(pick_up_available, saved_pup) :
 
     with open(saved_pup, "r") as file:
