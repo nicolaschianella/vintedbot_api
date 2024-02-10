@@ -10,9 +10,9 @@
 import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, PostAssociations
+from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
-                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL
+                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
 import logging
 from pymongo import MongoClient
@@ -217,7 +217,7 @@ async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
 
 
 @router.post("/add_association", status_code=200, response_model=CustomResponse)
-async def add_association(association: PostAssociations):
+async def add_association(association: AddAssociations) -> CustomResponse:
     """
     Used to add an association between clothe request_id and discord channel_id
     :return: backend.models.models.CustomResponse, with custom status_code if successful or not
@@ -229,19 +229,147 @@ async def add_association(association: PostAssociations):
     client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
     check_mongo(client)
 
-    # Add creation_date
-    association_dict["creation_date"] = datetime.now()
+    try:
+        # Add creation_date
+        association_dict["creation_date"] = datetime.now()
 
-    # Insertion
-    client[DB_NAME][ASSOCIATIONS_COLL].insert_one(association_dict)
+        # Insertion
+        client[DB_NAME][ASSOCIATIONS_COLL].insert_one(association_dict)
 
-    # Case where we have requests
-    logging.info(f"Inserted association: {association_dict}")
-    return JSONResponse(
-        status_code=200,
-        content={
-            "data": {},
-            "message": "Success",
-            "status": True
-        },
-    )
+        # Case where we have requests
+        logging.info(f"Inserted association: {association_dict}")
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {},
+                "message": "Success",
+                "status": True
+            },
+        )
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": "Internal Server Error",
+                "status": False
+            },
+        )
+
+
+@router.get("/get_active_requests_and_channels", status_code=200, response_model=CustomResponse)
+async def get_active_requests_and_channels() -> CustomResponse:
+    """
+    Used to get all active clothes requests and their corresponding channel id
+    :return: backend.models.models.CustomResponse, with data section being all the found requests and
+    channels ids (list[dict, list])
+    """
+    logging.info("Acquiring all the requests and channel ids")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    try:
+        # First get all associations
+        associations = list(client[DB_NAME][ASSOCIATIONS_COLL].find())
+
+        # Now get corresponding requests and channel ids
+        requests = []
+        channel_ids = []
+        for association in associations:
+            requests.append(list(client[DB_NAME][REQUESTS_COLL].find({"_id": ObjectId(association["request_id"])}))[0])
+            channel_ids.append(association["channel_id"])
+
+        response = {
+            "requests": requests,
+            "channel_ids": channel_ids
+        }
+
+        logging.info(f"Requests and channel ids found: {response['requests']}")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": json.dumps(response, default=serialize_datetime),
+                "message": "Success",
+                "status": True
+            },
+        )
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"Internal Server Error {e}",
+                "status": False
+            },
+        )
+
+
+@router.get("/get_user_infos", status_code=200, response_model=CustomResponse)
+async def get_user_infos(user: User) -> CustomResponse:
+    """
+    Returns number of stars and number of reviews of a user
+    Args:
+        user: backend.models.models.User, the user to get the infos from
+
+    Returns: backend.models.models.CustomResponse, with data section being the number of stars and number of reviews
+
+    """
+    logging.info(f"Getting infos from user: {user}")
+
+    # Format base API route to call
+    url = f"{VINTED_API_URL}/{VINTED_USER_ENDPOINT}"
+
+    # Instantiate session
+    session = define_session()
+    session = set_cookies(session)
+
+    # Try to call the API
+    for attempt in range(NB_RETRIES):
+        with session.get(url) as response:
+            if response.status_code != 200 and attempt < NB_RETRIES:
+                logging.warning(f"Could not get infos from user: {user}, attempt: {attempt+1}")
+                session = set_cookies(session)
+
+            elif response.status_code == 200:
+                logging.info(f"Successfully retrieved user infos for user: {user}")
+
+                number_reviews = response.json()["users"][0]["feedback_count"]
+                number_stars = float(response.json()["users"][0]["feedback_reputation"])
+
+                # number_stars is a number between 0 and 1 -> convert to 1, 2, 3, 4 or 5 stars
+                number_stars = round(5 * number_stars)
+
+                logging.info(f"User: {user}, found number of reviews: {number_reviews}, "
+                             f"number of stars: {number_stars}")
+
+                output = json.dumps({"number_reviews": number_reviews,
+                                     "number_stars": number_stars})
+
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "data": output,
+                        "message": f"Infos for user {user}",
+                        "status": True
+                    }
+                )
+
+            else:
+                logging.error(f"Could not get infos for user: {user}, max attempt reached. "
+                              f"Full response: {response.json()}")
+
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "data": {},
+                        "message": f"Could not get infos for user: {user}, max attempt reached. ",
+                        "status": False
+                    }
+                )

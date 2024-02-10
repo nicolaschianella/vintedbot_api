@@ -14,6 +14,8 @@
 VINTED_API_URL = f"https://www.vinted.fr/api/v2"
 # End point used to get clothes
 VINTED_PRODUCTS_ENDPOINT = "catalog/items"
+# End point to get user infos
+VINTED_USER_ENDPOINT = "users/"
 # Number of retries to get clothes
 NB_RETRIES = 5
 # Headers to pass for get_clothes route
