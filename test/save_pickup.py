@@ -4,6 +4,13 @@ import mondial as mond
 import json
 
 def get_geocode(address):
+    """
+    Get the latitude and longitude of the given address
+    :param address: Address of the user
+    :type address: str
+
+    :return: latitude, longitude
+    """
     geolocator = Nominatim(user_agent='user')
     location = geolocator.geocode(address)
     return float(location.raw['lat']), float(location.raw['lon'])

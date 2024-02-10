@@ -3,18 +3,26 @@ import re
 import json
 import fit_pickup as f
 def extract_csrf_token(text):
+    """
+    Extracts the CSRF token
+
+    :param text: Request content
+    :return: csrf token
+    """
     match = re.search(r'\\"CSRF_TOKEN\\":\\"([^"]+)\\"', text)
     if match:
         return match.group(1)
     else:
         return None
 
+# OPEN SESSION
 s = requests.Session()
 
+# OPEN USER'S DEFINED PICKUP POINTS OPTIONS
 with open("pu_points.json", "r") as file:
     pick_up_info = json.load(file)
 
-# Chargement des cookies si existant
+# LOAD COOKIES IF THEY EXIST
 try :
     with open("cookies.json", "r") as file:
         cookies = json.load(file)
@@ -30,7 +38,7 @@ s.headers = {
     'TE': 'Trailers',
 }
 
-# On charge la page avec les cookies si existant
+# LOG TO VINTED
 if cookies:
     req = s.get("https://www.vinted.fr", cookies=cookies)
 else:
@@ -39,7 +47,7 @@ csrfToken = extract_csrf_token(req.text)
 
 print('req : ', req.status_code)
 
-# On exécute ceci uniquement pour se log, si pas de cookies existant
+# USER TOKEN
 token = "eyJraWQiOiJFNTdZZHJ1SHBsQWp1MmNObzFEb3JIM2oyN0J1NS1zX09QNVB3UGlobjVNIiwiYWxnIjoiUFMyNTYifQ.eyJhcHBfaWQiOjQsInN1YiI6MTgyNjEwOTU2LCJpYXQiOjE3MDczMjc3NDYsInNpZCI6IjcwZjVlY2QwLTE3MDczMjc3NDYiLCJzY29wZSI6InVzZXIiLCJhY3QiOnsic3ViIjoxODI2MTA5NTZ9LCJleHAiOjE3MDczMzQ5NDZ9.NQHRo2xKLp7GUQ2Glpj35M6FZEzhF_3XGcDxnxoLN_R50W05CT0zKKYIcwiw5E8lAPuc45D_muZHUAz8mUpGW4cKaeG8QcusY5iggJL8HYhikfoQIVwyj5niakwfKJHpDgOcmNfjSPq3fkLkYcGqVq-dSkq0wDijiNwk3xpdGRvmHdLpXwGDGAF7bmGv2M5MRe78HgYlRjkl_n9mGYIxSoJbVFnS7FcYYT0D1KHOUekA7O2Z_-0Aw6FJjYNGmn8EiBe-uv9Vf9t6L-piguRlzceDZo3TVKQ0ia_YhBXoVQsOoKRdCNoP1nf43AfyFQcGrbeZduNLJprHrdHxSPp7gw"
 
 if not cookies :
@@ -93,14 +101,17 @@ s.headers = {
     'x-csrf-token': csrfToken,
 }
 
-params_buy = {"initiator": "buy", "item_id": "4083893191", "opposite_user_id": "13705098"}
+params_buy = {"initiator": "buy",
+              "item_id": "4083893191",
+              "opposite_user_id": "13705098"}
 
 buy = s.post("https://www.vinted.fr/api/v2/conversations", data=json.dumps(params_buy), cookies=cookies)
 print('buy : ', buy.status_code)
 
+# GET THE ID OF THE TRANSACTION
 transaction_id = re.search(r'"transaction":{"id":([^"]+),"',buy.text).group(1)
 
-
+# GET DEFAULT PARAMETERS FOR THE SHIPPING PROCESS
 s.headers = {
     'authority': 'www.vinted.fr',
     'accept': 'application/json, text/plain, */*',
@@ -127,9 +138,10 @@ s.headers = {
 checkout = s.put(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout', cookies=buy.cookies.get_dict())
 print('checkout :', checkout.status_code)
 
+# GET THE DEFAULT PICK UP POINT UUID's
 rate_uuid, root_rate_uuid = f.fit_uuid(checkout.text)
-# print(uuid, root_uuid)
 
+# SEARCH FOR NEARBY AVAILABLE PICK UP POINTS
 s.headers = {
     'authority': 'www.vinted.fr',
     'accept': 'application/json, text/plain, */*',
@@ -161,9 +173,10 @@ params = {
 pickup = s.get(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/nearby_shipping_options',data=params,cookies=checkout.cookies.get_dict())
 print('pickup : ', pickup.status_code)
 
+# GET DATA FOR THE CHOSEN PICK UP POINT
 new_uuid, pup_code, trans_code = f.fit_pup(json.loads(pickup.text)['nearby_shipping_points'], "pu_points.json")
-# print(new_uuid, pup_code, trans_code)
 
+# REPLACE DEFAULT DATA BY THE CHOSEN PICK UP POINT
 s.headers = {
     'authority': 'www.vinted.fr',
     'accept': 'application/json, text/plain, */*',
@@ -205,11 +218,10 @@ new_infos = s.put(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/c
 
 print('update : ', new_infos.status_code)
 
+# GET PAYMENT ID
 checksum = re.search(r'"checksum":"([^"]+)"',new_infos.text).group(1)
 
-# print(checksum)
-
-#### PAYMENT
+# PROCESS TO PAYMENT
 
 # s.headers = {
 #     'authority': 'www.vinted.fr',
