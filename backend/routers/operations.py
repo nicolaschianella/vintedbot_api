@@ -335,7 +335,7 @@ async def get_user_infos(user: User) -> CustomResponse:
 
     # Try to call the API
     for attempt in range(NB_RETRIES):
-        with session.get(url) as response:
+        with session.get(f"{url}/{user.dict()['user_id']}") as response:
             if response.status_code != 200 and attempt < NB_RETRIES:
                 logging.warning(f"Could not get infos from user: {user}, attempt: {attempt+1}")
                 session = set_cookies(session)
@@ -343,8 +343,8 @@ async def get_user_infos(user: User) -> CustomResponse:
             elif response.status_code == 200:
                 logging.info(f"Successfully retrieved user infos for user: {user}")
 
-                number_reviews = response.json()["users"][0]["feedback_count"]
-                number_stars = float(response.json()["users"][0]["feedback_reputation"])
+                number_reviews = response.json()["user"]["feedback_count"]
+                number_stars = float(response.json()["user"]["feedback_reputation"])
 
                 # number_stars is a number between 0 and 1 -> convert to 1, 2, 3, 4 or 5 stars
                 number_stars = round(5 * number_stars)
