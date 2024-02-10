@@ -24,8 +24,8 @@ def fit_pup(pick_up_available, saved_pup) :
     with open(saved_pup, "r") as file:
         pick_up_saved = json.load(file)
 
-    pup1 = [float(pick_up_saved[1]['latitude']), float(pick_up_saved[1]['longitude'])] #CHRONOPOST
-    pup2 = [pick_up_saved[2]['Adresse']['Latitude'], pick_up_saved[2]['Adresse']['Longitude']] #MONDIAL
+    pup1 = [pick_up_saved[1]['chronopost_pup_latitude'], pick_up_saved[1]['chronopost_pup_longitude']] #CHRONOPOST
+    pup2 = [pick_up_saved[2]['mondial_pup_latitude'], pick_up_saved[2]['mondial_pup_longitude']] #MONDIAL
 
     i = 0
     try :

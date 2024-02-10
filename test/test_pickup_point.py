@@ -77,7 +77,7 @@ s.headers = {
     'accept-language': 'fr',
     'content-type': 'application/json',
     'origin': 'https://www.vinted.fr',
-    'referer': 'https://www.vinted.fr/items/4071301307-nba2k18',
+    'referer': 'https://www.vinted.fr/items/4083893191-jeu-switch-agatha-christie',
     'sec-ch-device-memory': '8',
     'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
     'sec-ch-ua-arch': '"x86"',
@@ -93,7 +93,7 @@ s.headers = {
     'x-csrf-token': csrfToken,
 }
 
-params_buy = {"initiator": "buy", "item_id": "4071301307", "opposite_user_id": "171980102"}
+params_buy = {"initiator": "buy", "item_id": "4083893191", "opposite_user_id": "13705098"}
 
 buy = s.post("https://www.vinted.fr/api/v2/conversations", data=json.dumps(params_buy), cookies=cookies)
 print('buy : ', buy.status_code)
@@ -207,43 +207,43 @@ print('update : ', new_infos.status_code)
 
 checksum = re.search(r'"checksum":"([^"]+)"',new_infos.text).group(1)
 
-print(checksum)
+# print(checksum)
 
 #### PAYMENT
 
-s.headers = {
-    'authority': 'www.vinted.fr',
-    'accept': 'application/json, text/plain, */*',
-    'accept-language': 'fr',
-    'content-type': 'application/json',
-    'origin': 'https://www.vinted.fr',
-    'referer': f'https://www.vinted.fr/checkout?transaction_id={transaction_id}',
-    'sec-ch-device-memory': '8',
-    'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
-    'sec-ch-ua-arch': '"x86"',
-    'sec-ch-ua-full-version-list': '"Not.A/Brand";v="8.0.0.0", "Chromium";v="114.0.5735.106", "Google Chrome";v="114.0.5735.106"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-model': '""',
-    'sec-ch-ua-platform': '"Linux"',
-    'sec-fetch-dest': 'empty',
-    'sec-fetch-mode': 'cors',
-    'sec-fetch-site': 'same-origin',
-    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-    'x-anon-id': req.cookies.get_dict()['anon_id'],
-    'x-csrf-token': csrfToken,
-}
-
-params_pay = {"checksum":f"{checksum}",
-             "browser_attributes":{
-                 "language":"en-US",
-                 "color_depth":24,
-                 "java_enabled":"false",
-                 "screen_height":1080,
-                 "screen_width":1920,
-                 "timezone_offset":-60}
-             }
-
-pay = s.post(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout/payment',data=json.dumps(params_pay),cookies = checkout.cookies.get_dict())
-
-
-print('pay : ', pay.status_code)
+# s.headers = {
+#     'authority': 'www.vinted.fr',
+#     'accept': 'application/json, text/plain, */*',
+#     'accept-language': 'fr',
+#     'content-type': 'application/json',
+#     'origin': 'https://www.vinted.fr',
+#     'referer': f'https://www.vinted.fr/checkout?transaction_id={transaction_id}',
+#     'sec-ch-device-memory': '8',
+#     'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+#     'sec-ch-ua-arch': '"x86"',
+#     'sec-ch-ua-full-version-list': '"Not.A/Brand";v="8.0.0.0", "Chromium";v="114.0.5735.106", "Google Chrome";v="114.0.5735.106"',
+#     'sec-ch-ua-mobile': '?0',
+#     'sec-ch-ua-model': '""',
+#     'sec-ch-ua-platform': '"Linux"',
+#     'sec-fetch-dest': 'empty',
+#     'sec-fetch-mode': 'cors',
+#     'sec-fetch-site': 'same-origin',
+#     'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+#     'x-anon-id': req.cookies.get_dict()['anon_id'],
+#     'x-csrf-token': csrfToken,
+# }
+#
+# params_pay = {"checksum":f"{checksum}",
+#              "browser_attributes":{
+#                  "language":"en-US",
+#                  "color_depth":24,
+#                  "java_enabled":"false",
+#                  "screen_height":1080,
+#                  "screen_width":1920,
+#                  "timezone_offset":-60}
+#              }
+#
+# pay = s.post(f'https://www.vinted.fr/api/v2/transactions/{transaction_id}/checkout/payment',data=json.dumps(params_pay),cookies = checkout.cookies.get_dict())
+#
+#
+# print('pay : ', pay.status_code)
