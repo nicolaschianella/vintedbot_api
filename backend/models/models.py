@@ -111,3 +111,8 @@ class AddAssociations(BaseModel):
 class User(BaseModel):
     # user_id
     user_id: str
+
+
+class Clothe(BaseModel):
+    # clothe_url
+    clothe_url: str
