@@ -95,7 +95,7 @@ def reformat_clothes(clothes: list[dict]) -> list[dict]:
         except Exception as e:
             logging.warning(f"Could not reformat clothe {clothe} \nError: {e}")
 
-    logging.info(f"Successfully reformatted clothes: {output}")
+    logging.info(f"Successfully reformatted {len(output)} clothe(s)")
 
     return output
 
