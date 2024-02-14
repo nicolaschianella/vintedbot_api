@@ -11,7 +11,7 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
-                                  Clothe, AddClotheInStock
+                                  Clothe, AddClotheInStock, GetClothesInStock
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
                            STOCK_COLL
@@ -489,6 +489,8 @@ async def add_clothe_in_stock(clothe: AddClotheInStock) -> CustomResponse:
         # Insertion in stock
         client[DB_NAME][STOCK_COLL].insert_one(clothe)
 
+        logging.info(f"Clothe {clothe} registered in stock")
+
         return JSONResponse(
             status_code=200,
             content={
@@ -506,6 +508,68 @@ async def add_clothe_in_stock(clothe: AddClotheInStock) -> CustomResponse:
             content={
                 "data": {},
                 "message": f"Could not insert clothe in stock: {clothe}",
+                "status": False
+            }
+        )
+
+
+@router.get("/get_clothes_from_stock", status_code=200, response_model=CustomResponse)
+async def get_clothes_from_stock(mode: GetClothesInStock) -> CustomResponse:
+    """
+    Get clothes in stock
+    Args:
+        mode: backend.models.models.AddClotheInStock, one of "all", "in_stock", "sold"
+
+    Returns: backend.models.models.CustomResponse, with data section being found clothes
+
+    """
+    logging.info(f"Getting clothes from stock, mode: {mode}")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    mode = mode.dict()
+
+    try:
+        # Find clothes matching this filter
+        if mode["which"] in ["in_stock", "sold"]:
+            curs = list(client[DB_NAME][STOCK_COLL].find({"state": mode["which"]}))
+
+        elif mode["which"] == "all":
+            curs = list(client[DB_NAME][STOCK_COLL].find({}))
+
+        else:
+            logging.error(f"Wrong mode specified {mode} - should be one of 'in_stock', 'sold', 'all'")
+
+            return JSONResponse(
+                status_code=501,
+                content={
+                    "data": {},
+                    "message": f"Wrong mode specified {mode} - should be one of 'in_stock', 'sold', 'all'",
+                    "status": False
+                }
+            )
+
+        logging.info(f"Found {len(curs)} clothe(s) in stock with mode {mode}")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": json.dumps({"found_clothes": curs}, default=serialize_datetime),
+                "message": f"Clothes from stock with mode {mode}",
+                "status": True
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Error while getting clothes from stock with mode: {mode}, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"Could not get clothes from stock with mode: {mode}",
                 "status": False
             }
         )
