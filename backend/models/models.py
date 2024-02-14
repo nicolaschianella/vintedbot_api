@@ -155,3 +155,8 @@ class AddClotheInStock(BaseModel):
     view_count: str
     # fuzz partial ratio (clothe name/request search text)
     ratio: str
+
+
+class GetClothesInStock(BaseModel):
+    # "all", "in_stock" or "sold"
+    which: str = "all"
