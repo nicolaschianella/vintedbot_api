@@ -475,7 +475,7 @@ async def add_clothe_in_stock(clothe: AddClotheInStock) -> CustomResponse:
         curs = list(client[DB_NAME][STOCK_COLL].find({"clothe_id": clothe["clothe_id"]}))
 
         if curs:
-            logging.warning(f"Clothe with clothe_id {clothe['clothe_id']} already exists in stock")
+            logging.error(f"Clothe with clothe_id {clothe['clothe_id']} already exists in stock")
 
             return JSONResponse(
                 status_code=501,
