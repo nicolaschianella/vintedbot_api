@@ -116,3 +116,42 @@ class User(BaseModel):
 class Clothe(BaseModel):
     # clothe_url
     clothe_url: str
+
+
+class AddClotheInStock(BaseModel):
+    """
+    Represents clothes we add in stock
+    """
+    # request_id in our DB used to get this clothe
+    request_id: str
+    # Vinted clothe id
+    clothe_id: str
+    # seller_id
+    seller_id: str
+    # clothe name
+    title: str
+    # brand name
+    brand_title: str
+    # size
+    size_title: str
+    # clothe state
+    status: str
+    # prices
+    price_no_fee: str
+    service_fee: str
+    total_item_price: str
+    # Always EUR
+    currency: str
+    # clothe url, photo url
+    url: str
+    photo_url: str
+    # can this be sometimes yes?
+    is_photo_suspicious: str
+    # when the clothe was put in Vinted's DB
+    created_at_ts: str
+    raw_timestamp: str
+    # number of favourites/views when we bought the clothe
+    favourite_count: str
+    view_count: str
+    # fuzz partial ratio (clothe name/request search text)
+    ratio: str
