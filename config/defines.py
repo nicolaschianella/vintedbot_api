@@ -37,3 +37,5 @@ DB_NAME = "guysvinted"
 REQUESTS_COLL = "requests"
 # Collection containing associations {clothe_request_id: discord_channel_id}
 ASSOCIATIONS_COLL = "associations"
+# Collection for stock
+STOCK_COLL = "stock"
