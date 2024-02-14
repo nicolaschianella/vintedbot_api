@@ -11,9 +11,10 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
-                                  Clothe
+                                  Clothe, AddClotheInStock
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
-                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT
+                           MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
+                           STOCK_COLL
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
 import logging
 import time
@@ -441,6 +442,70 @@ async def get_images_url(clothe: Clothe) -> CustomResponse:
             content={
                 "data": {},
                 "message": f"Could not get images for {clothe}",
+                "status": False
+            }
+        )
+
+
+@router.post("/add_clothe_in_stock", status_code=200, response_model=CustomResponse)
+async def add_clothe_in_stock(clothe: AddClotheInStock) -> CustomResponse:
+    """
+    Registers a new clothe in stock
+    Args:
+        clothe: backend.models.models.AddClotheInStock, clothe to insert
+
+    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
+
+    """
+    logging.info(f"Registering clothe in stock: {clothe}")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    clothe = clothe.dict()
+
+    # Add "added_in_stock", "updated", "state", "selling_price" keys
+    clothe["added_in_stock_date"] = clothe["updated"] = datetime.now()
+    clothe["sale_date"] = clothe["selling_price"] = "NA"
+    clothe["state"] = "in_stock"
+
+    try:
+        # Are there already clothes with this id in the DB?
+        curs = list(client[DB_NAME][STOCK_COLL].find({"clothe_id": clothe["clothe_id"]}))
+
+        if curs:
+            logging.warning(f"Clothe with clothe_id {clothe['clothe_id']} already exists in stock")
+
+            return JSONResponse(
+                status_code=501,
+                content={
+                    "data": {},
+                    "message": f"Clothe with clothe_id {clothe['clothe_id']} already exists in stock",
+                    "status": False
+                }
+            )
+
+        # Insertion in stock
+        client[DB_NAME][STOCK_COLL].insert_one(clothe)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {},
+                "message": f"Clothe {clothe} registered in stock",
+                "status": True
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Error while putting clothe in stock: {clothe}, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"Could not insert clothe in stock: {clothe}",
                 "status": False
             }
         )
