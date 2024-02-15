@@ -11,7 +11,7 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
-                                  Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes
+                                  Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes, DeleteClothesFromStock
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
                            STOCK_COLL
@@ -640,6 +640,52 @@ async def sell_clothes(clothe: SaleOfClothes) -> CustomResponse:
             content={
                 "data": {},
                 "message": f"Could not insert clothe as sold: {clothe}",
+                "status": False
+            }
+        )
+
+
+@router.post("/delete_clothes", status_code=200, response_model=CustomResponse)
+async def delete_clothes(clothe: DeleteClothesFromStock) -> CustomResponse:
+    """
+    Deletes clothes in stock
+    Args:
+        clothe: backend.models.models.DeleteClothesFromStock, clothe_id to delete
+
+    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
+
+    """
+    logging.info(f"Deleting clothe in stock: {clothe}")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    clothe = clothe.dict()
+
+    try:
+        # If ok, we can update the item in stock
+        client[DB_NAME][STOCK_COLL].delete_one({"clothe_id": clothe["clothe_id"]})
+
+        logging.info(f"Clothe {clothe} deleted from stock")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {},
+                "message": f"Clothe {clothe} deleted from stock",
+                "status": True
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Error while deleting clothe from stock: {clothe}, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"Could not delete clothe from stock: {clothe}",
                 "status": False
             }
         )
