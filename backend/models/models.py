@@ -169,3 +169,8 @@ class SaleOfClothes(BaseModel):
     sale_date: str
     # selling_price
     selling_price: str
+
+
+class DeleteClothesFromStock(BaseModel):
+    # clothe_id
+    clothe_id: str
