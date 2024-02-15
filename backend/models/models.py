@@ -160,3 +160,12 @@ class AddClotheInStock(BaseModel):
 class GetClothesInStock(BaseModel):
     # "all", "in_stock" or "sold"
     which: str = "all"
+
+
+class SaleOfClothes(BaseModel):
+    # clothe_id
+    clothe_id: str
+    # sale_date
+    sale_date: str
+    # selling_price
+    selling_price: str
