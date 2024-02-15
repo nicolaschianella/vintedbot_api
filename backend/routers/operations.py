@@ -11,13 +11,14 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
-                                  Clothe, AddClotheInStock, GetClothesInStock
+                                  Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
                            STOCK_COLL
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
 import logging
 import time
+import pytz
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from datetime import datetime
@@ -465,7 +466,7 @@ async def add_clothe_in_stock(clothe: AddClotheInStock) -> CustomResponse:
 
     clothe = clothe.dict()
 
-    # Add "added_in_stock", "updated", "state", "selling_price" keys
+    # Add "added_in_stock_date", "updated", "state", "selling_price" keys
     clothe["added_in_stock_date"] = clothe["updated"] = datetime.now()
     clothe["sale_date"] = clothe["selling_price"] = "NA"
     clothe["state"] = "in_stock"
@@ -570,6 +571,75 @@ async def get_clothes_from_stock(mode: GetClothesInStock) -> CustomResponse:
             content={
                 "data": {},
                 "message": f"Could not get clothes from stock with mode: {mode}",
+                "status": False
+            }
+        )
+
+
+@router.post("/sell_clothes", status_code=200, response_model=CustomResponse)
+async def sell_clothes(clothe: SaleOfClothes) -> CustomResponse:
+    """
+    Updates clothes from in_stock to sold
+    Args:
+        clothe: backend.models.models.SaleOfClothes, clothe to sell
+
+    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
+
+    """
+    logging.info(f"Selling clothe in stock: {clothe}")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    clothe = clothe.dict()
+
+    original_sale_date = clothe["sale_date"]
+
+    # Try to parse date into datetime object
+    try:
+        clothe["sale_date"] = pytz.timezone("Europe/Brussels").localize(datetime.strptime(clothe["sale_date"],
+                                                                           "%d-%m-%Y %H:%M")).astimezone(pytz.utc)
+
+    except Exception as e:
+        logging.error(f"Could not parse date {original_sale_date} in format '%d-%m-%Y %H:%M': {e}")
+
+        return JSONResponse(
+            status_code=501,
+            content={
+                "data": {},
+                "message": f"Could not parse date {original_sale_date} in format '%d-%m-%Y %H:%M'",
+                "status": False
+            }
+        )
+
+    try:
+        # If ok, we can update the item in stock
+        client[DB_NAME][STOCK_COLL].update_one({"clothe_id": clothe["clothe_id"]},
+                                                  {"$set": {"state": "sold",
+                                                            "selling_price": clothe["selling_price"],
+                                                            "sale_date": clothe["sale_date"],
+                                                            "updated": datetime.now()}})
+
+        logging.info(f"Clothe {clothe} registered as sold")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {},
+                "message": f"Clothe {clothe} registered as sold",
+                "status": True
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Error while putting clothe as sold: {clothe}, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": f"Could not insert clothe as sold: {clothe}",
                 "status": False
             }
         )
