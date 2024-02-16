@@ -16,6 +16,7 @@ import re
 import json
 from datetime import datetime, timezone
 from geopy.geocoders import Nominatim
+import geopy.distance
 
 
 def define_session(headers=HEADERS_BASE_URL, new=True, session=None) -> requests.Session:
@@ -257,3 +258,15 @@ def get_colissimo_pickup_points(latitude, longitude, zipcode, city, country):
     )
 
     return json.loads(response.text)['olgiPointList']
+
+def compute_pickup_distance(point_1: tuple, point_2: tuple) -> float:
+    """
+    Compute distance between two points using coordinates in km
+    Args:
+        point_1: tuple, (lat1, lon1)
+        point_2: tuple, (lat2, lon2)
+
+    Returns: float, distance in km
+
+    """
+    return geopy.distance.geodesic(point_1, point_2).km
