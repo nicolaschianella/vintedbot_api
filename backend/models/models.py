@@ -179,3 +179,16 @@ class DeleteClothesFromStock(BaseModel):
 class Login(BaseModel):
     # Bearer token
     bearer: str
+
+
+class GetPickUp(BaseModel):
+    # Number
+    number: str
+    # Street
+    street: str
+    # Zipcode
+    zipcode: str
+    # City
+    city: str
+    # Country
+    country: str
