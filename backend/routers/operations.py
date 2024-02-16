@@ -12,12 +12,13 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
                                   Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes, DeleteClothesFromStock, \
-                                  Login
+                                  Login, GetPickUp
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
-                           STOCK_COLL, COOKIES_COLL, VINTED_BASE_URL, VINTED_SESSION_URL, HEADERS_LOGIN
+                           STOCK_COLL, COOKIES_COLL, VINTED_BASE_URL, VINTED_SESSION_URL, HEADERS_LOGIN, NB_PICKUP
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo, \
-                                extract_csrf_token
+                                extract_csrf_token, get_geocode, get_mondial_pickup_points, get_colissimo_pickup_points, \
+                                compute_pickup_distance
 import logging
 import time
 import pytz
@@ -782,6 +783,128 @@ async def login(log_in: Login) -> CustomResponse:
 
     except Exception as e:
         logging.error(f"Could not log in, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": "Internal server error",
+                "status": False
+            }
+        )
+
+
+@router.get("/get_close_pickup_points", status_code=200, response_model=CustomResponse)
+async def get_close_pickup_points(address: GetPickUp) -> CustomResponse:
+    """
+    Get n close pick-up points for different services
+
+    Args:
+        address: backend.models.models.GetPickUp, address to look nearby
+
+    Returns: backend.models.models.CustomResponse, with data section being found pick-up points
+
+    """
+    logging.info(f"Getting {NB_PICKUP} closest pickup points")
+
+    try:
+        address = address.dict()
+        order = ["number", "street", "zipcode", "city", "country"]
+        address_str = ""
+
+        zipcode, city, country = address["zipcode"], address["city"], address["country"]
+
+        # Get infos
+        for o in order:
+            address_str += address[o] + ","
+
+        # Delete last coma
+        address_str = address_str[:-1]
+
+        lat, lon = get_geocode(address_str)
+
+        # Get pick up points
+        colissimo_pup = get_colissimo_pickup_points(lat, lon, zipcode, city, country)
+        mondial_pup = get_mondial_pickup_points(zipcode, city)
+
+        # mondial_up needs to be sorted by distance
+        distances = []
+        for pickup in mondial_pup:
+            distances.append(compute_pickup_distance((float(lat), float(lon)),
+                                                     (pickup["Adresse"]["Latitude"], pickup["Adresse"]["Longitude"])))
+
+        mondial_pup = [pickup for _, pickup in sorted(zip(distances, mondial_pup))]
+
+        # Filter NB_PICKUP closest
+        colissimo_pup = colissimo_pup[:NB_PICKUP]
+        mondial_pup = mondial_pup[:NB_PICKUP]
+
+        if (len(colissimo_pup) == 0) or (len(mondial_pup) == 0):
+            logging.error(f"One pick up points list is empty: colissimo len {len(colissimo_pup)}, mondial len "
+                          f"{mondial_pup}")
+
+            return JSONResponse(
+                status_code=501,
+                content={
+                    "data": {},
+                    "message": "One pick up points list is empty",
+                    "status": False
+                }
+            )
+
+        logging.info(f"Found {len(colissimo_pup)} colissimo pick up points and {len(mondial_pup)} mondial pick up "
+                     f"points")
+
+        # Format outputs
+        output_misc = {"user_lat": lat,
+                       "user_lon": lon}
+
+        output_col = []
+
+        for pickup in colissimo_pup:
+            # Convert to float to remove zeros
+            output_col_dict = {
+                "lat": float(pickup["latitude"]),
+                "lon": float(pickup["longitude"]),
+                "user_display": pickup["name"] + " " +
+                                pickup["address"] + " " +
+                                pickup["zipcode"] + " " +
+                                pickup["city"]
+            }
+            output_col.append(output_col_dict)
+
+        output_mon = []
+
+        for pickup in mondial_pup:
+            output_mon_dict = {
+                "lat": float(pickup["Adresse"]["Latitude"]),
+                "lon": float(pickup["Adresse"]["Longitude"]),
+                "user_display": pickup["Adresse"]["Libelle"] + " " +
+                                pickup["Adresse"]["AdresseLigne1"] + " " +
+                                pickup["Adresse"]["CodePostal"] + " " +
+                                pickup["Adresse"]["Ville"]
+            }
+            output_mon.append(output_mon_dict)
+
+        output = {
+            "user_misc": output_misc,
+            "col": output_col,
+            "mon": output_mon
+        }
+
+        logging.info(f"Final output: {output}")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": json.dumps(output),
+                "message": f"Found {len(colissimo_pup)} colissimo pick up points and {len(mondial_pup)} pick up points",
+                "status": True
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Could get pick up points, exception: {e}")
 
         return JSONResponse(
             status_code=500,
