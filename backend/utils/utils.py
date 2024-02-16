@@ -13,7 +13,9 @@ import requests
 import logging
 import bson
 import re
+import json
 from datetime import datetime, timezone
+from geopy.geocoders import Nominatim
 
 
 def define_session(headers=HEADERS_BASE_URL, new=True, session=None) -> requests.Session:
@@ -153,3 +155,105 @@ def extract_csrf_token(request_text):
 
     else:
         logging.error(f"Error getting CSRF-Token")
+
+def get_geocode(address):
+    """
+    Get the latitude and longitude of the given address
+    Args:
+        address: str, user address
+
+    Returns: tuple[float, float], latitude and longitude
+
+    """
+    logging.info("Getting address lat, lon")
+
+    geolocator = Nominatim(user_agent='user')
+    location = geolocator.geocode(address)
+
+    lat, lon = float(location.raw['lat']), float(location.raw['lon'])
+
+    logging.info(f"Found address lat: {lat}, lon: {lon}")
+
+    return lat, lon
+
+def get_mondial_pickup_points(zipcode, city):
+    """
+    Get mondial pickup
+    Args:
+        zipcode: str
+        city: str
+
+    Returns: list, list of pickup points (from closest to furthest)
+
+    """
+
+    headers = {
+        'authority': 'www.mondialrelay.fr',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'fr-FR',
+        'referer': f'https://www.mondialrelay.fr/trouver-le-point-relais-le-plus-proche-de-chez-moi/?codePays=FR&codePostal={zipcode}',
+        'requestverificationtoken': 'VRMZ-6oSgJoMPCKSPfvptpkzQ6TyFek_lYpi69-XaHGPzODs12jS2AbFbvHKKxVGbodS1Haon-vBlV1VsxcNJzIGtuk1:uQ0aA4Q6Y_hdgwfbWiV6iHi88CNCaMA-_gbxx0B4VMlTnLWJ8d-1DGbAedgy4Yw0_xil6wfyrAvbzDJijqi76jRypME1',
+        'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Linux"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+    }
+
+    response = requests.get(
+        f'https://www.mondialrelay.fr/api/parcelshop?country=FR&postcode={zipcode}&city={city}&services=&excludeSat=false&naturesAllowed=1,A,E,F,D,J,T,S,C&agencesAllowed=',
+        headers=headers,
+    )
+
+    return json.loads(response.text)
+
+def get_colissimo_pickup_points(latitude, longitude, zipcode, city, country):
+    """
+    Get colissimo pickup
+    Args:
+        latitude: str
+        longitude: str
+        zipcode: str
+        city: str
+        country: str
+
+    Returns: list, list of pickup points (from closest to furthest)
+
+    """
+
+    headers = {
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive',
+        'Referer': f'https://www.chronopost.fr/expeditionAvanceeSec/ounoustrouver.html?copyButton=1&key=7n8nI15pWlZ3wC6o16gigg==&zipCode={zipcode}&city={city}&backUrl=http://infosco.chronopost.fr&category=2&vue=relaissansservice',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        'X-Requested-With': 'XMLHttpRequest',
+        'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Linux"',
+    }
+
+    params = {
+        'lat': latitude,
+        'lon': longitude,
+        'r': '40',
+        'z': zipcode,
+        'c': city,
+        'a': '',
+        'p': country,
+        'lang': 'null',
+        '_': '170862393908',
+    }
+
+    response = requests.get(
+        'https://www.chronopost.fr/expeditionAvanceeSec/stubpointsearchinterparservice.json',
+        params=params,
+        headers=headers,
+    )
+
+    return json.loads(response.text)['olgiPointList']
