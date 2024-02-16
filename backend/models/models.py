@@ -174,3 +174,8 @@ class SaleOfClothes(BaseModel):
 class DeleteClothesFromStock(BaseModel):
     # clothe_id
     clothe_id: str
+
+
+class Login(BaseModel):
+    # Bearer token
+    bearer: str
