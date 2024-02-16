@@ -11,11 +11,13 @@ import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
-                                  Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes, DeleteClothesFromStock
+                                  Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes, DeleteClothesFromStock, \
+                                  Login
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
-                           STOCK_COLL
-from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo
+                           STOCK_COLL, COOKIES_COLL, VINTED_BASE_URL, VINTED_SESSION_URL, HEADERS_LOGIN
+from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo, \
+                                extract_csrf_token
 import logging
 import time
 import pytz
@@ -686,6 +688,106 @@ async def delete_clothes(clothe: DeleteClothesFromStock) -> CustomResponse:
             content={
                 "data": {},
                 "message": f"Could not delete clothe from stock: {clothe}",
+                "status": False
+            }
+        )
+
+
+@router.post("/login", status_code=200, response_model=CustomResponse)
+async def login(log_in: Login) -> CustomResponse:
+    """
+    Log in, write CSRF-Token and cookies in Mongo
+    Args:
+        log_in: backend.models.models.Login, bearer token to log in
+
+    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
+
+    """
+    logging.info(f"Attempting login")
+
+    log_in = log_in.dict()
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    try:
+        bearer = log_in["bearer"]
+
+        # Define session using base headers - we don't care about AUTH here
+        session = define_session()
+
+        # First request to retrieve CSRF-Token
+        req = session.get(VINTED_BASE_URL)
+        csrf_token = extract_csrf_token(req.text)
+
+        # First case - no CSRF-Token
+        if not csrf_token:
+            logging.error(f"Could not retrieve CSRF-Token, full response: {req.text}")
+
+            return JSONResponse(
+                status_code=501,
+                content={
+                    "data": {},
+                    "message": "Could not retrieve CSRF-Token",
+                    "status": False
+                }
+            )
+
+        logging.info(f"CSRF-Token OK: {csrf_token}")
+
+        # If OK attempt format headers
+        headers_login = HEADERS_LOGIN.copy()
+        headers_login["authorization"] = f"Bearer {bearer}"
+        session = define_session(headers_login, False, session)
+
+        # Attempt log in
+        req = session.get(VINTED_SESSION_URL)
+
+        # Success - post results in DB (update)
+        if req.status_code == 200:
+            logging.info("Login OK - pushing csrf-token and cookies in Mongo")
+
+            client[DB_NAME][COOKIES_COLL].update_one({"name": "csrf_token"},
+                                                     {"$set": {"value": csrf_token}},
+                                                     upsert=True)
+
+            client[DB_NAME][COOKIES_COLL].update_one({"name": "cookies"},
+                                                     {"$set": {"value": session.cookies.get_dict()}},
+                                                     upsert=True)
+
+            logging.info("Insertion in DB OK")
+
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "data": {},
+                    "message": "Vinted login success",
+                    "status": True
+                }
+            )
+
+        # Error during login
+        else:
+            logging.error(f"Vinted login failed, status_code: {req.status_code}, full response: {req.text}")
+
+            return JSONResponse(
+                status_code=502,
+                content={
+                    "data": {},
+                    "message": f"Vinted login failed, status_code: {req.status_code}",
+                    "status": False
+                }
+            )
+
+    except Exception as e:
+        logging.error(f"Could not log in, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": "Internal server error",
                 "status": False
             }
         )
