@@ -7,24 +7,31 @@
 # Created:   16 January 2024
 #
 ###############################################################################
-from config.defines import HEADERS_GET_CLOTHES, VINTED_AUTH_URL
-from fastapi.responses import JSONResponse
+from config.defines import VINTED_AUTH_URL, HEADERS_BASE_URL
 from pymongo import MongoClient
 import requests
 import logging
 import bson
-from datetime import datetime, timezone, date
+import re
+from datetime import datetime, timezone
 
 
-def define_session() -> requests.Session:
+def define_session(headers=HEADERS_BASE_URL, new=True, session=None) -> requests.Session:
     """
-    Generic function to define a new user session and set headers
+    Generic function to define a user session and set headers
 
-    Returns: requests.Session, session instance with headers set
+    Args:
+        headers: dict, headers to set
+        new: bool, whether we want a full new session or update existing
+        session: request.Session, if we want to update this session (new should be False in this case)
+
+    Returns:
 
     """
-    session = requests.Session()
-    session.headers.update(HEADERS_GET_CLOTHES)
+    if new:
+        session = requests.Session()
+
+    session.headers.update(headers)
 
     return session
 
@@ -126,11 +133,23 @@ def check_mongo(client: MongoClient):
 
     except Exception as e:
         logging.error(f"MongoDB is not alive, error {e}")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "data": {},
-                "message": f"MongoDB is not alive, error: {str(e)}",
-                "status": False
-            },
-        )
+        raise Exception(f"MongoDB is not alive, error {e}")
+
+def extract_csrf_token(request_text):
+    """
+    Extracts CSRF-Token from request text
+    Args:
+        request_text: str, request text
+
+    Returns: str
+
+    """
+    match = re.search(r'\\"CSRF_TOKEN\\":\\"([^"]+)\\"', request_text)
+
+    if match:
+        token = match.group(1)
+        logging.info(f"Extracted CSRF-Token: {token}")
+        return token
+
+    else:
+        logging.error(f"Error getting CSRF-Token")
