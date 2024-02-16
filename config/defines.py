@@ -18,13 +18,33 @@ VINTED_PRODUCTS_ENDPOINT = "catalog/items"
 VINTED_USER_ENDPOINT = "users/"
 # Number of retries to get clothes
 NB_RETRIES = 5
-# Headers to pass for get_clothes route
-HEADERS_GET_CLOTHES = {
-    "User-Agent": "PostmanRuntime/7.28.4",
-    "Host": "www.vinted.fr"
-}
 # Vinted AUTH URL to get clothes
 VINTED_AUTH_URL = "https://www.vinted.fr/auth/token_refresh"
+# Vinted BASE URL
+VINTED_BASE_URL = "https://www.vinted.fr"
+# Headers for base url
+HEADERS_BASE_URL = {
+        'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'fr',
+        "host": "www.vinted.fr"
+    }
+# Vinted SESSION URL to login
+VINTED_SESSION_URL = "https://www.vinted.fr/member/general/session_from_token"
+# Headers to log in
+HEADERS_LOGIN = {
+    'authority': 'www.vinted.fr',
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'fr',
+    "referer":"https://www.vinted.fr/",
+    'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Linux"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+    }
 
 ########## MongoDB related ##########
 # MongoDB Host/Port
@@ -39,3 +59,5 @@ REQUESTS_COLL = "requests"
 ASSOCIATIONS_COLL = "associations"
 # Collection for stock
 STOCK_COLL = "stock"
+# Collection for CSRF-Token and session cookies
+COOKIES_COLL = "cookies"
