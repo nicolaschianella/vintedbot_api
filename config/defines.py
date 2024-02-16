@@ -18,6 +18,8 @@ VINTED_PRODUCTS_ENDPOINT = "catalog/items"
 VINTED_USER_ENDPOINT = "users/"
 # Number of retries to get clothes
 NB_RETRIES = 5
+# Number of pickup points to retrieve
+NB_PICKUP = 5
 # Vinted AUTH URL to get clothes
 VINTED_AUTH_URL = "https://www.vinted.fr/auth/token_refresh"
 # Vinted BASE URL
