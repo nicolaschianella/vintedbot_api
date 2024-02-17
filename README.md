@@ -45,5 +45,5 @@ Available collections:
 - **requests**: saves information about clothes searches
 - **associations**: saves information about relationships between clothes requests and Discord channels
 - **stock**: saves information about stock (items in_stock and sold)
-- **relay**: saves information about pickup points
+- **pickup**: saves information about pickup points
 - **cookies**: saves information about session cookies
