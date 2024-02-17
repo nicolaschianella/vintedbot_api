@@ -209,6 +209,7 @@ class PickUpPosition(BaseModel):
     # name, address
     user_display: str
 
+
 class SavePickUp(BaseModel):
     # colissimo position
     col: PickUpPosition
@@ -216,4 +217,13 @@ class SavePickUp(BaseModel):
     mon: PickUpPosition
     # user position
     user_position: UserPosition
+
+
+class AutoBuy(BaseModel):
+    # item_id
+    item_id: str
+    # seller_id
+    seller_id: str
+    # item_url
+    item_url: str
 
