@@ -12,10 +12,11 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
                                   Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes, DeleteClothesFromStock, \
-                                  Login, GetPickUp
+                                  Login, GetPickUp, SavePickUp
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
-                           STOCK_COLL, COOKIES_COLL, VINTED_BASE_URL, VINTED_SESSION_URL, HEADERS_LOGIN, NB_PICKUP
+                           STOCK_COLL, COOKIES_COLL, VINTED_BASE_URL, VINTED_SESSION_URL, HEADERS_LOGIN, NB_PICKUP, \
+                           PICKUP_COLL
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo, \
                                 extract_csrf_token, get_geocode, get_mondial_pickup_points, get_colissimo_pickup_points, \
                                 compute_pickup_distance
@@ -906,6 +907,65 @@ async def get_close_pickup_points(address: GetPickUp) -> CustomResponse:
 
     except Exception as e:
         logging.error(f"Could get pick up points, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": "Internal server error",
+                "status": False
+            }
+        )
+
+
+@router.post("/save_pickup_points", status_code=200, response_model=CustomResponse)
+async def save_pickup_points(positions: SavePickUp) -> CustomResponse:
+    """
+    Save pickup points and user position in DB
+
+    Args:
+        positions: backend.models.models.SavePickUp, user, colissimo and mondial positions
+
+    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
+
+    """
+    logging.info("Saving pickup points and user positions")
+
+    positions = positions.dict()
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    try:
+        # If ok, we can update pickup points
+        col, mon, user = positions["col"], positions["mon"], positions["user_position"]
+
+        client[DB_NAME][PICKUP_COLL].update_one({"type": "user"},
+                                                {"$set": {"value": user}},
+                                                upsert=True)
+
+        client[DB_NAME][PICKUP_COLL].update_one({"type": "col"},
+                                                {"$set": {"value": col}},
+                                                upsert=True)
+
+        client[DB_NAME][PICKUP_COLL].update_one({"type": "mon"},
+                                                {"$set": {"value": mon}},
+                                                upsert=True)
+
+        logging.info("Successfully saved pickup points and user positions")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {},
+                "message": "Successfully saved pickup points and user positions",
+                "status": True
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Could save pick up points and user positions, exception: {e}")
 
         return JSONResponse(
             status_code=500,
