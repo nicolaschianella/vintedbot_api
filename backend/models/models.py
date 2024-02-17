@@ -192,3 +192,28 @@ class GetPickUp(BaseModel):
     city: str
     # Country
     country: str
+
+
+class UserPosition(BaseModel):
+    # latitude
+    user_lat: str
+    # longitude
+    user_lon: str
+
+
+class PickUpPosition(BaseModel):
+    # latitude
+    lat: str
+    # longitude
+    lon: str
+    # name, address
+    user_display: str
+
+class SavePickUp(BaseModel):
+    # colissimo position
+    col: PickUpPosition
+    # mondial position
+    mon: PickUpPosition
+    # user position
+    user_position: UserPosition
+
