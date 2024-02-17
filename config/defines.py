@@ -63,3 +63,5 @@ ASSOCIATIONS_COLL = "associations"
 STOCK_COLL = "stock"
 # Collection for CSRF-Token and session cookies
 COOKIES_COLL = "cookies"
+# Collection for pickup points and user positions
+PICKUP_COLL = "pickup"
