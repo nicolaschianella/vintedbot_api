@@ -8,18 +8,20 @@
 #
 ###############################################################################
 import json
+import re
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from backend.models.models import CustomResponse, InputGetClothes, InputUpdateRequests, AddAssociations, User, \
                                   Clothe, AddClotheInStock, GetClothesInStock, SaleOfClothes, DeleteClothesFromStock, \
-                                  Login, GetPickUp, SavePickUp
+                                  Login, GetPickUp, SavePickUp, AutoBuy
 from config.defines import VINTED_API_URL, VINTED_PRODUCTS_ENDPOINT, NB_RETRIES, \
                            MONGO_HOST_PORT, DB_NAME, REQUESTS_COLL, ASSOCIATIONS_COLL, VINTED_USER_ENDPOINT, \
                            STOCK_COLL, COOKIES_COLL, VINTED_BASE_URL, VINTED_SESSION_URL, HEADERS_LOGIN, NB_PICKUP, \
-                           PICKUP_COLL
+                           PICKUP_COLL, HEADERS_AUTOBUY, VINTED_BUY_URL, ALREADY_SOLD_CODE, VINTED_HEADERS_CHECKOUT_URL, \
+                           VINTED_CHECKOUT_URL
 from backend.utils.utils import define_session, set_cookies, reformat_clothes, serialize_datetime, check_mongo, \
                                 extract_csrf_token, get_geocode, get_mondial_pickup_points, get_colissimo_pickup_points, \
-                                compute_pickup_distance
+                                compute_pickup_distance, store_cookies, fit_uuid, fit_pup
 import logging
 import time
 import pytz
@@ -966,6 +968,332 @@ async def save_pickup_points(positions: SavePickUp) -> CustomResponse:
 
     except Exception as e:
         logging.error(f"Could save pick up points and user positions, exception: {e}")
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "data": {},
+                "message": "Internal server error",
+                "status": False
+            }
+        )
+
+
+@router.post("/autobuy", status_code=200, response_model=CustomResponse)
+async def autobuy(buy: AutoBuy) -> CustomResponse:
+    """
+    Autobuy an item on Vinted
+
+    Args:
+        buy: backend.models.models.AutoBuy, information needed for the transaction to be done
+
+    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
+
+    """
+    buy = buy.dict()
+
+    item_id, seller_id, item_url = buy["item_id"], buy["seller_id"], buy["item_url"]
+
+    logging.info(f"Autobuy, item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url}")
+
+    # Instantiate MongoClient
+    client = MongoClient(MONGO_HOST_PORT, serverSelectionTimeoutMS=10000)
+    check_mongo(client)
+
+    try:
+        # First we need to retrieve cookies stored in Mongo
+        csrf_token = list(client[DB_NAME][COOKIES_COLL].find({"name": "csrf_token"}))[0]["value"]
+        cookies = list(client[DB_NAME][COOKIES_COLL].find({"name": "cookies"}))[0]["value"]
+        anon_id = cookies["anon_id"]
+
+        # Define headers
+        buy_headers = HEADERS_AUTOBUY.copy()
+        buy_headers["content-type"] = "application/json"
+        buy_headers["referer"] = item_url
+        buy_headers["x-anon-id"] = anon_id
+        buy_headers["x-csrf-token"] = csrf_token
+
+        # Define a new session object, apply cookies and headers
+        session = define_session(headers=buy_headers, cookies=cookies)
+
+        # Format params
+        params_buy = {"initiator": "buy",
+                      "item_id": item_id,
+                      "opposite_user_id": seller_id}
+
+        ########################################### BUY REQUEST ###########################################
+
+        # Buy request
+        buy = session.post(VINTED_BUY_URL, data=json.dumps(params_buy))
+
+        # First case - item already sold
+        if (buy.status_code == 400) and (int(json.loads(buy.text)["code"]) == ALREADY_SOLD_CODE):
+            logging.warning(f"Item already sold: (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url}), "
+                            f"full response: {buy.text}")
+
+            # Save session cookies
+            store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+            return JSONResponse(
+                status_code=501,
+                content={
+                    "data": {},
+                    "message": "Already sold",
+                    "status": False
+                }
+            )
+
+        # Second case - not 200
+        elif buy.status_code != 200:
+            logging.error(f"Issue with buy request: (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url}), "
+                          f"full response: {buy.text}")
+
+            # Save session cookies
+            store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+            return JSONResponse(
+                status_code=502,
+                content={
+                    "data": {},
+                    "message": "Issue with buy request",
+                    "status": False
+                }
+            )
+
+        # Third case - OK
+        logging.info(f"Buy request OK: (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url})")
+
+        ########################################### CHECKOUT REQUEST ###########################################
+
+        # Proceed to store cookies
+        store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+        # Find transaction_id
+        transaction_id = re.search(r'"transaction":{"id":([^"]+),"', buy.text).group(1)
+
+        # Define new headers
+        checkout_headers = HEADERS_AUTOBUY.copy()
+        checkout_headers["content-type"] = "application/x-www-form-urlencoded"
+        checkout_headers["referer"] = f"{VINTED_HEADERS_CHECKOUT_URL}{transaction_id}"
+        checkout_headers["x-anon-id"] = anon_id
+        checkout_headers["x-csrf-token"] = csrf_token
+        checkout_headers["x-money-object"] = "true"
+
+        # Update session object (to keep cookies) and headers
+        session = define_session(headers=checkout_headers, new=False, session=session)
+
+        # Checkout request
+        checkout = session.put(f"{VINTED_CHECKOUT_URL}/{transaction_id}/checkout")
+
+        # First case - not 200
+        if checkout.status_code != 200:
+            logging.error(f"Issue with checkout request: (item_id: {item_id}, seller_id: {seller_id}, "
+                          f"item_url: {item_url}), full response: {checkout.text}")
+
+            # Save session cookies
+            store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "data": {},
+                    "message": "Issue with checkout request",
+                    "status": False
+                }
+            )
+
+        # Second case - OK
+        logging.info(f"Checkout request OK: (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url})")
+
+        ########################################### SHIPPING REQUEST ###########################################
+
+        # Proceed to store cookies
+        store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+        # GET THE DEFAULT PICK UP POINT UUID's
+        rate_uuid, root_rate_uuid = fit_uuid(checkout.text)
+
+        # Define new headers
+        shipping_headers = HEADERS_AUTOBUY.copy()
+        del shipping_headers["origin"]
+        shipping_headers["referer"] = f"{VINTED_HEADERS_CHECKOUT_URL}{transaction_id}"
+        shipping_headers["x-anon-id"] = anon_id
+        shipping_headers["x-csrf-token"] = csrf_token
+        shipping_headers["x-money-object"] = "true"
+
+        # Update session object (to keep cookies) and headers
+        session = define_session(headers=shipping_headers, new=False, session=session)
+
+        # Get user lat and lon
+        user_info = list(client[DB_NAME][PICKUP_COLL].find({"type": "user"}))[0]["value"]
+        user_lat, user_lon = user_info["user_lat"], user_info["user_lon"]
+
+        # Format params
+        params_shipping = {
+                        'country_code': 'FR',
+                        'latitude': user_lat,
+                        'longitude': user_lon,
+                        'should_label_nearest_points': 'false'
+                    }
+
+        # Make request
+        shipping = session.get(f"{VINTED_CHECKOUT_URL}/{transaction_id}/nearby_shipping_options",
+                               data=params_shipping)
+
+        # First case - not 200
+        if shipping.status_code != 200:
+            logging.error(f"Issue with shipping request: (item_id: {item_id}, seller_id: {seller_id}, "
+                          f"item_url: {item_url}), full response: {shipping.text}")
+
+            # Save session cookies
+            store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+            return JSONResponse(
+                status_code=504,
+                content={
+                    "data": {},
+                    "message": "Issue with shipping request",
+                    "status": False
+                }
+            )
+
+        # Second case - OK
+        logging.info(f"Shipping request OK: (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url})")
+
+        ########################################### PICKUP REQUEST ###########################################
+
+        # Proceed to store cookies
+        store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+        # Get pickup points infos
+        col_info = list(client[DB_NAME][PICKUP_COLL].find({"type": "col"}))[0]["value"]
+        mon_info = list(client[DB_NAME][PICKUP_COLL].find({"type": "mon"}))[0]["value"]
+        col_lat, col_lon = float(col_info["lat"]), float(col_info["lon"])
+        mon_lat, mon_lon = float(mon_info["lat"]), float(mon_info["lon"])
+
+        # Get data for the chosen pickup point
+        new_uuid, pup_code, trans_code = fit_pup(json.loads(shipping.text)['nearby_shipping_points'],
+                                                 [col_lat, col_lon],
+                                                 [mon_lat, mon_lon])
+
+        # Define new headers
+        pickup_headers = HEADERS_AUTOBUY.copy()
+        pickup_headers["content-type"] = "application/json"
+        pickup_headers["referer"] = f"{VINTED_HEADERS_CHECKOUT_URL}{transaction_id}"
+        pickup_headers["x-anon-id"] = anon_id
+        pickup_headers["x-csrf-token"] = csrf_token
+        pickup_headers["x-money-object"] = "true"
+
+        # Update session object (to keep cookies) and headers
+        session = define_session(headers=pickup_headers, new=False, session=session)
+
+        # Format params
+        params_pickup = {
+                    "transaction":{
+                        "shipment":{
+                            "package_type_id": trans_code,
+                            "pickup_point_code": pup_code,
+                            "rate_uuid": rate_uuid,
+                            "point_uuid": new_uuid,
+                            "root_rate_uuid": root_rate_uuid
+                        },
+                        "buyer_debit": {},
+                        "offline_verification": {}
+                    }
+                }
+
+        # Make request
+        pickup = session.put(f"{VINTED_CHECKOUT_URL}/{transaction_id}/checkout",
+                             data=json.dumps(params_pickup))
+
+        # First case - not 200
+        if pickup.status_code != 200:
+            logging.error(f"Issue with pickup request: (item_id: {item_id}, seller_id: {seller_id}, "
+                          f"item_url: {item_url}), full response: {pickup.text}")
+
+            # Save session cookies
+            store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+            return JSONResponse(
+                status_code=505,
+                content={
+                    "data": {},
+                    "message": "Issue with pickup request",
+                    "status": False
+                }
+            )
+
+        # Second case - OK
+        logging.info(f"Pickup request OK: (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url})")
+
+        ########################################### PAY REQUEST ###########################################
+
+        # Proceed to store cookies
+        store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+        # Get payment ID
+        checksum = re.search(r'"checksum":"([^"]+)"', pickup.text).group(1)
+
+        # Define new headers
+        pay_headers = HEADERS_AUTOBUY.copy()
+        pay_headers["content-type"] = "application/json"
+        pay_headers["referer"] = f"{VINTED_HEADERS_CHECKOUT_URL}{transaction_id}"
+        pay_headers["x-anon-id"] = anon_id
+        pay_headers["x-csrf-token"] = csrf_token
+
+        # Update session object (to keep cookies) and headers
+        session = define_session(headers=pay_headers, new=False, session=session)
+
+        # Format params
+        params_pay = {"checksum": f"{checksum}",
+                      "browser_attributes": {
+                          "language": "en-US",
+                          "color_depth": 24,
+                          "java_enabled": "false",
+                          "screen_height": 1080,
+                          "screen_width": 1920,
+                          "timezone_offset": -60}
+                      }
+
+        # Make request
+        pay = session.post(f"{VINTED_CHECKOUT_URL}/{transaction_id}/checkout/payment",
+                          data=json.dumps(params_pay))
+
+        # First case - not 200
+        if pay.status_code != 200:
+            logging.error(f"Issue with pay request: (item_id: {item_id}, seller_id: {seller_id}, "
+                          f"item_url: {item_url}), full response: {pay.text}")
+
+            # Save session cookies
+            store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+            return JSONResponse(
+                status_code=506,
+                content={
+                    "data": {},
+                    "message": "Issue with pay request",
+                    "status": False
+                }
+            )
+
+        # Second case - OK
+        logging.info(f"Pay request OK: (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url})")
+
+        # Save session cookies
+        store_cookies(client, DB_NAME, COOKIES_COLL, session.cookies.get_dict())
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "data": {},
+                "message": "Success",
+                "status": False
+            }
+        )
+
+    except Exception as e:
+        logging.error(f"Could not autobuy (item_id: {item_id}, seller_id: {seller_id}, item_url: {item_url}), "
+                      f"exception: {e}")
 
         return JSONResponse(
             status_code=500,
