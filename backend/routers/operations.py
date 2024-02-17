@@ -898,7 +898,8 @@ async def get_close_pickup_points(address: GetPickUp) -> CustomResponse:
             status_code=200,
             content={
                 "data": json.dumps(output),
-                "message": f"Found {len(colissimo_pup)} colissimo pick up points and {len(mondial_pup)} pick up points",
+                "message": f"Found {len(colissimo_pup)} colissimo pick up points and {len(mondial_pup)} mondial "
+                           f"pick up points",
                 "status": True
             }
         )
