@@ -19,14 +19,15 @@ from geopy.geocoders import Nominatim
 import geopy.distance
 
 
-def define_session(headers=HEADERS_BASE_URL, new=True, session=None) -> requests.Session:
+def define_session(headers=HEADERS_BASE_URL, new=True, session=None, cookies=None) -> requests.Session:
     """
-    Generic function to define a user session and set headers
+    Generic function to define a user session and set headers and cookies
 
     Args:
         headers: dict, headers to set
         new: bool, whether we want a full new session or update existing
         session: request.Session, if we want to update this session (new should be False in this case)
+        cookies: dict, cookies to set
 
     Returns:
 
@@ -35,6 +36,9 @@ def define_session(headers=HEADERS_BASE_URL, new=True, session=None) -> requests
         session = requests.Session()
 
     session.headers.update(headers)
+
+    if cookies:
+        session.cookies.update(cookies)
 
     return session
 
@@ -270,3 +274,97 @@ def compute_pickup_distance(point_1: tuple, point_2: tuple) -> float:
 
     """
     return geopy.distance.geodesic(point_1, point_2).km
+
+def store_cookies(client: MongoClient, db: str, coll: str, cookies: dict) -> None:
+    """
+    Stores cookies in Mongo to keep track of session cookies
+    Args:
+        client: MongoClient
+        db: str, db where we store cookies
+        coll: str, collection where we store cookies
+        cookies: dict, cookies to store
+
+    Returns: None
+
+    """
+    logging.info("Storing cookies in Mongo")
+
+    # No upsert needed since process crashes in any way if record doesn't exist
+    client[db][coll].update_one({"name": "cookies"},
+                                {"$set": {"value": cookies}})
+    logging.info("Storing cookies OK")
+
+def fit_uuid(text) :
+    """
+    Get the default uuid's from Vinted.
+    These are then used in the param file for the pickup point update.
+    Args:
+        text: str, request response text
+
+    Returns: tuple[str, str]
+
+    """
+    rate_uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_option"]["rate_uuid"]
+    root_rate_uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_option"]["root_rate_uuid"]
+
+    logging.info("rate_uuid, root_rate_uuid OK")
+
+    return rate_uuid, root_rate_uuid
+
+def code_pup(p):
+    """
+    Returns the transporter code as defined by Vinted
+    Args:
+        p: dict, pickup point
+
+    Returns: int, transporter code
+
+    """
+    if p['point']['carrier_id'] == 4:
+        m = 1017
+
+    elif p['point']['carrier_id'] == 27:
+        m = 118
+
+    else:
+        m = 0
+
+    logging.info(f"Found transporter code: {m}")
+
+    return m
+
+def fit_pup(pick_up_available, col_pup, mon_pup) :
+    """
+    Scans the nearby pickup points and tries to find one of the user's defined point.
+    If no match, returns the first point of the list.
+    Args:
+        pick_up_available: list, nearby pickup points
+        col_pup: tuple[float, float], latitude and longitude for colissimo saved pickup point
+        mon_pup: tuple[float, float], latitude and longitude for mondial saved pickup point
+
+    Returns: tuple[int, str, str], point_uuid, point_code, transporter_code
+
+    """
+
+    i = 0
+
+    try :
+        while float(pick_up_available[i].get('point').get('latitude')) != col_pup[0] and float(pick_up_available[i].get('point').get('latitude')) != mon_pup[0]:
+            i+=1
+
+        if float(pick_up_available[i].get('point').get('longitude')) == col_pup[1] or float(pick_up_available[i].get('point').get('longitude')) == mon_pup[1]:
+            marker = i
+
+        else:
+            marker = 0
+
+    except IndexError:
+        marker = 0
+
+    point_uuid, point_code, transporter_code = (pick_up_available[marker].get('point').get('uuid'),
+                                                pick_up_available[marker].get('point').get('code'),
+                                                code_pup(pick_up_available[marker]))
+
+    logging.info(f"Found point_uuid: {point_uuid}, point_code: {point_code}, transporter_code: {transporter_code}")
+
+    return point_uuid, point_code, transporter_code
