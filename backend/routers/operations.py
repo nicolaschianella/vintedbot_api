@@ -749,8 +749,12 @@ async def login(log_in: Login) -> CustomResponse:
         req = session.get(VINTED_SESSION_URL)
 
         # Success - post results in DB (update)
-        if req.status_code == 200:
-            logging.info("Login OK - pushing csrf-token and cookies in Mongo")
+        if "v_uid" in req.cookies.get_dict().keys():
+            logging.info("Login OK - pushing bearer, csrf-token and cookies in Mongo")
+
+            client[DB_NAME][COOKIES_COLL].update_one({"name": "bearer"},
+                                                     {"$set": {"value": bearer}},
+                                                     upsert=True)
 
             client[DB_NAME][COOKIES_COLL].update_one({"name": "csrf_token"},
                                                      {"$set": {"value": csrf_token}},
@@ -1001,7 +1005,12 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
     check_mongo(client)
 
     try:
-        # First we need to retrieve cookies stored in Mongo
+        # First we need to retrieve bearer stored in Mongo
+        bearer = list(client[DB_NAME][COOKIES_COLL].find({"name": "bearer"}))[0]["value"]
+        # Now log in
+        await login(Login.parse_obj({"bearer": bearer}))
+
+        # Now retrieve CSRF-Tokenn anon_id and generated cookies
         csrf_token = list(client[DB_NAME][COOKIES_COLL].find({"name": "csrf_token"}))[0]["value"]
         cookies = list(client[DB_NAME][COOKIES_COLL].find({"name": "cookies"}))[0]["value"]
         anon_id = cookies["anon_id"]
