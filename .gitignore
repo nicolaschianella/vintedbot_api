@@ -1,0 +1,14 @@
+# Logs
+*.log
+nohup.out
+# PyCharm stuff
+.idea/
+__pycache__/
+# VS Code
+.vscode/
+# Git
+.git/
+# VirtualEnv
+venv/
+# Env files
+.env
