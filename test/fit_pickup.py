@@ -25,8 +25,10 @@ def code_pup(p):
         m = 1017
     elif p['point']['carrier_id'] == 27 :
         m = 118
+    elif p['point']['carrier_id'] == 97:
+        m = 1418
     else :
-        m = 0
+        m = 396
     return(m)
 
 def fit_pup(pick_up_available, saved_pup) :
@@ -48,6 +50,7 @@ def fit_pup(pick_up_available, saved_pup) :
     i = 0
     try :
         while float(pick_up_available[i].get('point').get('latitude')) != pup1[0] and float(pick_up_available[i].get('point').get('latitude')) != pup2[0]:
+            print(pick_up_available[i]['point']['name'] + ' ' + pick_up_available[i]['point']['address_line1'] + ' ' + pick_up_available[i]['point']['postal_code'] + ' ' + pick_up_available[i]['point']['city'] + ' ' + pick_up_available[i]['point']['code'])
             i+=1
         if float(pick_up_available[i].get('point').get('longitude')) == pup1[1] or float(pick_up_available[i].get('point').get('longitude')) == pup2[1]:
             marker = i
@@ -55,4 +58,9 @@ def fit_pup(pick_up_available, saved_pup) :
             marker = 0
     except IndexError:
         marker = 0
+
+    print(pick_up_available[marker]['point']['name'] + ' ' + pick_up_available[marker]['point']['address_line1'] + ' ' +
+          pick_up_available[marker]['point']['postal_code'] + ' ' + pick_up_available[marker]['point']['city'] + ' ' + pick_up_available[marker].get('point').get('code')
+          )
+
     return(pick_up_available[marker].get('point').get('uuid'), pick_up_available[marker].get('point').get('code') , code_pup(pick_up_available[marker]))
