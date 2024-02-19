@@ -365,6 +365,7 @@ def fit_pup(pick_up_available, col_pup, mon_pup) :
                                                 pick_up_available[marker].get('point').get('code'),
                                                 code_pup(pick_up_available[marker]))
 
-    logging.info(f"Found point_uuid: {point_uuid}, point_code: {point_code}, transporter_code: {transporter_code}")
+    logging.info(f"Found point_uuid: {point_uuid}, point_code: {point_code}, transporter_code: {transporter_code}, "
+                 f"marker: {marker}")
 
     return point_uuid, point_code, transporter_code

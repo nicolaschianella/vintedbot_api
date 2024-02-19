@@ -1064,7 +1064,7 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
                 status_code=502,
                 content={
                     "data": {},
-                    "message": "Issue with buy request",
+                    "message": f"Issue with buy request: {buy.text}",
                     "status": False
                 }
             )
@@ -1106,7 +1106,7 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
                 status_code=503,
                 content={
                     "data": {},
-                    "message": "Issue with checkout request",
+                    "message": f"Issue with checkout request: {checkout.text}",
                     "status": False
                 }
             )
@@ -1140,10 +1140,12 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
         # Format params
         params_shipping = {
                         'country_code': 'FR',
-                        'latitude': user_lat,
-                        'longitude': user_lon,
+                        'latitude': float(user_lat),
+                        'longitude': float(user_lon),
                         'should_label_nearest_points': 'false'
                     }
+
+        logging.info(f"params_shipping: {params_shipping}")
 
         # Make request
         shipping = session.get(f"{VINTED_CHECKOUT_URL}/{transaction_id}/nearby_shipping_options",
@@ -1161,7 +1163,7 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
                 status_code=504,
                 content={
                     "data": {},
-                    "message": "Issue with shipping request",
+                    "message": f"Issue with shipping request: {shipping.text}",
                     "status": False
                 }
             )
@@ -1211,6 +1213,8 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
                     }
                 }
 
+        logging.info(f"params_pickup: {params_pickup}")
+
         # Make request
         pickup = session.put(f"{VINTED_CHECKOUT_URL}/{transaction_id}/checkout",
                              data=json.dumps(params_pickup))
@@ -1227,7 +1231,7 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
                 status_code=505,
                 content={
                     "data": {},
-                    "message": "Issue with pickup request",
+                    "message": f"Issue with pickup request: {pickup.text}",
                     "status": False
                 }
             )
@@ -1280,7 +1284,7 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
                 status_code=506,
                 content={
                     "data": {},
-                    "message": "Issue with pay request",
+                    "message": f"Issue with pay request: {pay.text}",
                     "status": False
                 }
             )
@@ -1308,7 +1312,7 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
             status_code=500,
             content={
                 "data": {},
-                "message": "Internal server error",
+                "message": f"Internal server error: {e}",
                 "status": False
             }
         )
