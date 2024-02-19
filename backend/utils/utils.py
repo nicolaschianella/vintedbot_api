@@ -320,11 +320,29 @@ def code_pup(p):
     Returns: int, transporter code
 
     """
+    # Mondial
     if p['point']['carrier_id'] == 4:
         m = 1017
 
+    # Chronopost
     elif p['point']['carrier_id'] == 27:
         m = 118
+
+    # Shop to shop by Chronopost
+    elif p['point']['carrier_id'] == 68:
+        m = 1071
+
+    # Vinted Go
+    elif p['point']['carrier_id'] == 97:
+        m = 1418
+
+    # Colis Prive FR
+    elif p['point']['carrier_id'] == 85:
+        m = 1213
+
+    # Relais colis
+    elif p['point']['carrier_id'] == 50:
+        m = 396
 
     else:
         m = 0
