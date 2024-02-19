@@ -111,3 +111,119 @@ class AddAssociations(BaseModel):
 class User(BaseModel):
     # user_id
     user_id: str
+
+
+class Clothe(BaseModel):
+    # clothe_url
+    clothe_url: str
+
+
+class AddClotheInStock(BaseModel):
+    """
+    Represents clothes we add in stock
+    """
+    # request_id in our DB used to get this clothe
+    request_id: str
+    # Vinted clothe id
+    clothe_id: str
+    # seller_id
+    seller_id: str
+    # clothe name
+    title: str
+    # brand name
+    brand_title: str
+    # size
+    size_title: str
+    # clothe state
+    status: str
+    # prices
+    price_no_fee: str
+    service_fee: str
+    total_item_price: str
+    # Always EUR
+    currency: str
+    # clothe url, photo url
+    url: str
+    photo_url: str
+    # can this be sometimes yes?
+    is_photo_suspicious: str
+    # when the clothe was put in Vinted's DB
+    created_at_ts: str
+    raw_timestamp: str
+    # number of favourites/views when we bought the clothe
+    favourite_count: str
+    view_count: str
+    # fuzz partial ratio (clothe name/request search text)
+    ratio: str
+
+
+class GetClothesInStock(BaseModel):
+    # "all", "in_stock" or "sold"
+    which: str = "all"
+
+
+class SaleOfClothes(BaseModel):
+    # clothe_id
+    clothe_id: str
+    # sale_date
+    sale_date: str
+    # selling_price
+    selling_price: str
+
+
+class DeleteClothesFromStock(BaseModel):
+    # clothe_id
+    clothe_id: str
+
+
+class Login(BaseModel):
+    # Bearer token
+    bearer: str
+
+
+class GetPickUp(BaseModel):
+    # Number
+    number: str
+    # Street
+    street: str
+    # Zipcode
+    zipcode: str
+    # City
+    city: str
+    # Country
+    country: str
+
+
+class UserPosition(BaseModel):
+    # latitude
+    user_lat: str
+    # longitude
+    user_lon: str
+
+
+class PickUpPosition(BaseModel):
+    # latitude
+    lat: str
+    # longitude
+    lon: str
+    # name, address
+    user_display: str
+
+
+class SavePickUp(BaseModel):
+    # colissimo position
+    col: PickUpPosition
+    # mondial position
+    mon: PickUpPosition
+    # user position
+    user_position: UserPosition
+
+
+class AutoBuy(BaseModel):
+    # item_id
+    item_id: str
+    # seller_id
+    seller_id: str
+    # item_url
+    item_url: str
+
