@@ -89,18 +89,17 @@ async def get_clothes(input_filters: InputGetClothes) -> CustomResponse:
                     }
                 )
 
-            else:
-                logging.error(f"Could not get clothes with filters: {input_filters}, max attempt reached. "
-                              f"Full response: {response.json()}")
+    logging.error(f"Could not get clothes with filters: {input_filters}, max attempt reached. "
+                  f"Full response: {response.json()}")
 
-                return JSONResponse(
-                    status_code=500,
-                    content={
-                        "data": {},
-                        "message": f"Could not get clothes with filters: {input_filters}, max attempt reached.",
-                        "status": False
-                    }
-                )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "data": {},
+            "message": f"Could not get clothes with filters: {input_filters}, max attempt reached.",
+            "status": False
+        }
+    )
 
 
 @router.get("/get_requests", status_code=200, response_model=CustomResponse)
@@ -718,8 +717,9 @@ async def login(log_in: Login) -> CustomResponse:
     try:
         bearer = log_in["bearer"]
 
-        # Define session using base headers - we don't care about AUTH here
+        # Define session using base headers
         session = define_session()
+        session = set_cookies(session)
 
         # First request to retrieve CSRF-Token
         req = session.get(VINTED_BASE_URL)
