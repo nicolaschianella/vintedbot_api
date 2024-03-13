@@ -1185,7 +1185,8 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
         # Get data for the chosen pickup point
         new_uuid, pup_code, trans_code = fit_pup(json.loads(shipping.text)['nearby_shipping_points'],
                                                  [col_lat, col_lon],
-                                                 [mon_lat, mon_lon])
+                                                 [mon_lat, mon_lon],
+                                                 json.loads(checkout.text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_options"])
 
         # Define new headers
         pickup_headers = HEADERS_AUTOBUY.copy()
