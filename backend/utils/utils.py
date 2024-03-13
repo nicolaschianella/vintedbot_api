@@ -316,7 +316,7 @@ def code_pup(p, pup_options):
     Returns the transporter code as defined by Vinted
     Args:
         p: dict, pickup point
-        chck: list, templated pickup codes
+        pup_options: list, templated pickup codes
 
     Returns: int, transporter code
 
