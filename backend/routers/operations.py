@@ -44,10 +44,10 @@ async def get_clothes(input_filters: InputGetClothes) -> CustomResponse:
     Used to get Vinted clothes based on specific filters
 
     Args:
-        input_filters: backend.models.models.InputGetClothes, filters to apply
+        input_filters (backend.models.models.InputGetClothes): filters to apply
 
-    Returns: backend.models.models.CustomResponse, with data section being all the found clothes
-
+    Returns:
+        backend.models.models.CustomResponse, with data section being all the found clothes
     """
     logging.info(f"Getting clothes with filters: {input_filters}")
 
@@ -106,7 +106,9 @@ async def get_clothes(input_filters: InputGetClothes) -> CustomResponse:
 async def get_requests() -> CustomResponse:
     """
     Used to get all the clothes requests stored in MongoDB
-    :return: backend.models.models.CustomResponse, with data section being all the found requests (list of dict)
+
+    Returns:
+        backend.models.models.CustomResponse, with data section being all the found requests (list of dict)
     """
     logging.info("Getting all the existing requests")
 
@@ -145,8 +147,13 @@ async def get_requests() -> CustomResponse:
 async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
     """
     Used to update all the clothes requests stored in MongoDB
-    :return: backend.models.models.CustomResponse, with custom status_code if successful or not, and concerned ids
-    in data section
+
+    Args:
+        input_filters (backend.models.models.InputUpdateRequests): filters to apply
+
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not, and concerned ids
+        in data section
     """
     input_filters = input_filters.dict()
     logging.info(f"Updating all the existing requests, received: {input_filters}")
@@ -230,7 +237,12 @@ async def update_requests(input_filters: InputUpdateRequests) -> CustomResponse:
 async def add_association(association: AddAssociations) -> CustomResponse:
     """
     Used to add an association between clothe request_id and discord channel_id
-    :return: backend.models.models.CustomResponse, with custom status_code if successful or not
+
+    Args:
+        association (backend.models.models.AddAssociations): association to add in the MongoDB
+
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not
     """
     association_dict = association.dict()
     logging.info(f"Starting association insertion: {association_dict}")
@@ -273,8 +285,10 @@ async def add_association(association: AddAssociations) -> CustomResponse:
 async def get_active_requests_and_channels() -> CustomResponse:
     """
     Used to get all active clothes requests and their corresponding channel id
-    :return: backend.models.models.CustomResponse, with data section being all the found requests and
-    channels ids (list[dict, list])
+
+    Returns:
+        backend.models.models.CustomResponse, with data section being all the found requests and
+        channels ids (list[dict, list])
     """
     logging.info("Acquiring all the requests and channel ids")
 
@@ -325,11 +339,12 @@ async def get_active_requests_and_channels() -> CustomResponse:
 async def get_user_infos(user: User) -> CustomResponse:
     """
     Returns number of stars and number of reviews of a user
+
     Args:
-        user: backend.models.models.User, the user to get the infos from
+        user (backend.models.models.User): the user to get the infos from
 
-    Returns: backend.models.models.CustomResponse, with data section being the number of stars and number of reviews
-
+    Returns:
+        backend.models.models.CustomResponse, with data section being the number of stars and number of reviews
     """
     logging.info(f"Getting infos from user: {user}")
 
@@ -389,15 +404,16 @@ async def get_user_infos(user: User) -> CustomResponse:
 async def get_images_url(clothe: Clothe) -> CustomResponse:
     """
     Returns all images URLs found for a given clothe URL
-    Args:
-        clothe: backend.models.models.Clothe, clothe object containing the URL to scrape images from
 
-    Returns: backend.models.models.CustomResponse, with data section containing all found images URLs
+    Args:
+        clothe (backend.models.models.Clothe): clothe object containing the URL to scrape images from
+
+    Returns:
+        backend.models.models.CustomResponse, with data section containing all found images URLs
 
     Note: using this method, we can only scrape the displayed carousel images. In case the item contains more
     than 5 images, they cannot be retrieved using this technique, since remaining images appear in the HTML code
     only after clicking on whatever displayed image.
-
     """
     logging.info(f"Getting images from URL: {clothe}")
 
@@ -457,11 +473,12 @@ async def get_images_url(clothe: Clothe) -> CustomResponse:
 async def add_clothe_in_stock(clothe: AddClotheInStock) -> CustomResponse:
     """
     Registers a new clothe in stock
+
     Args:
-        clothe: backend.models.models.AddClotheInStock, clothe to insert
+        clothe (backend.models.models.AddClotheInStock): clothe to insert
 
-    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
-
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not
     """
     logging.info(f"Registering clothe in stock: {clothe}")
 
@@ -523,11 +540,12 @@ async def add_clothe_in_stock(clothe: AddClotheInStock) -> CustomResponse:
 async def get_clothes_from_stock(mode: GetClothesInStock) -> CustomResponse:
     """
     Get clothes in stock
+
     Args:
-        mode: backend.models.models.AddClotheInStock, one of "all", "in_stock", "sold"
+        mode (backend.models.models.AddClotheInStock): one of "all", "in_stock", "sold"
 
-    Returns: backend.models.models.CustomResponse, with data section being found clothes
-
+    Returns:
+        backend.models.models.CustomResponse, with data section being found clothes
     """
     logging.info(f"Getting clothes from stock, mode: {mode}")
 
@@ -585,11 +603,12 @@ async def get_clothes_from_stock(mode: GetClothesInStock) -> CustomResponse:
 async def sell_clothes(clothe: SaleOfClothes) -> CustomResponse:
     """
     Updates clothes from in_stock to sold
+
     Args:
-        clothe: backend.models.models.SaleOfClothes, clothe to sell
+        clothe (backend.models.models.SaleOfClothes): clothe to sell
 
-    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
-
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not
     """
     logging.info(f"Selling clothe in stock: {clothe}")
 
@@ -654,11 +673,12 @@ async def sell_clothes(clothe: SaleOfClothes) -> CustomResponse:
 async def delete_clothes(clothe: DeleteClothesFromStock) -> CustomResponse:
     """
     Deletes clothes in stock
+
     Args:
-        clothe: backend.models.models.DeleteClothesFromStock, clothe_id to delete
+        clothe (backend.models.models.DeleteClothesFromStock): clothe_id to delete
 
-    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
-
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not
     """
     logging.info(f"Deleting clothe in stock: {clothe}")
 
@@ -700,11 +720,12 @@ async def delete_clothes(clothe: DeleteClothesFromStock) -> CustomResponse:
 async def login(log_in: Login) -> CustomResponse:
     """
     Log in, write CSRF-Token and cookies in Mongo
+
     Args:
-        log_in: backend.models.models.Login, bearer token to log in
+        log_in (backend.models.models.Login): bearer token to log in
 
-    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
-
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not
     """
     logging.info(f"Attempting login")
 
@@ -807,10 +828,10 @@ async def get_close_pickup_points(address: GetPickUp) -> CustomResponse:
     Get n close pick-up points for different services
 
     Args:
-        address: backend.models.models.GetPickUp, address to look nearby
+        address (backend.models.models.GetPickUp): address to look nearby
 
-    Returns: backend.models.models.CustomResponse, with data section being found pick-up points
-
+    Returns:
+        backend.models.models.CustomResponse, with data section being found pick-up points
     """
     logging.info(f"Getting {NB_PICKUP} closest pickup points")
 
@@ -930,10 +951,10 @@ async def save_pickup_points(positions: SavePickUp) -> CustomResponse:
     Save pickup points and user position in DB
 
     Args:
-        positions: backend.models.models.SavePickUp, user, colissimo and mondial positions
+        positions (backend.models.models.SavePickUp): user, colissimo and mondial positions
 
-    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
-
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not
     """
     logging.info("Saving pickup points and user positions")
 
@@ -989,10 +1010,10 @@ async def autobuy(buy: AutoBuy) -> CustomResponse:
     Autobuy an item on Vinted
 
     Args:
-        buy: backend.models.models.AutoBuy, information needed for the transaction to be done
+        buy (backend.models.models.AutoBuy): information needed for the transaction to be done
 
-    Returns: backend.models.models.CustomResponse, with custom status_code if successful or not
-
+    Returns:
+        backend.models.models.CustomResponse, with custom status_code if successful or not
     """
     buy = buy.dict()
 
