@@ -25,8 +25,8 @@ async def health_check():
     """
     Simple route to check if the API is alive
 
-    Returns: backend.models.models.CustomResponse
-
+    Returns:
+        backend.models.models.CustomResponse
     """
     logging.info("I am alive, please check the docs for my usage")
     return JSONResponse(

@@ -19,18 +19,21 @@ from geopy.geocoders import Nominatim
 import geopy.distance
 
 
-def define_session(headers=HEADERS_BASE_URL, new=True, session=None, cookies=None) -> requests.Session:
+def define_session(headers: dict=HEADERS_BASE_URL,
+                   new: bool=True,
+                   session: requests.Session=None,
+                   cookies: dict=None) -> requests.Session:
     """
     Generic function to define a user session and set headers and cookies
 
     Args:
-        headers: dict, headers to set
-        new: bool, whether we want a full new session or update existing
-        session: request.Session, if we want to update this session (new should be False in this case)
-        cookies: dict, cookies to set
+        headers (dict): headers to set
+        new (bool): whether we want a full new session or update existing
+        session (request.Session): if we want to update this session (new should be False in this case)
+        cookies (dict): cookies to set
 
     Returns:
-
+        requests.Session, session with headers/cookies set, depending on provided input params
     """
     if new:
         session = requests.Session()
@@ -45,12 +48,12 @@ def define_session(headers=HEADERS_BASE_URL, new=True, session=None, cookies=Non
 def set_cookies(session: requests.Session) -> requests.Session:
     """
     Sets AUTH cookie to session, to allow users to get Vinted clothes
+
     Args:
-        session: requests.Session, session instance with headers already set
+        session (requests.Session): session instance with headers already set
 
     Returns:
-        session: requests.Session, session instance with AUTH cookies set
-
+        session (requests.Session): session instance with AUTH cookies set
     """
     session.cookies.clear_session_cookies()
 
@@ -65,12 +68,12 @@ def set_cookies(session: requests.Session) -> requests.Session:
 def reformat_clothes(clothes: list[dict]) -> list[dict]:
     """
     Reformat clothes gotten from get_clothes route to keep only desirable information
+
     Args:
-        clothes: list of dictionaries with every dictionary being the result of get_clothes route
+        clothes (list[dict]): list of dictionaries with every dictionary being the result of get_clothes route
 
     Returns:
-        output: list of dictionaries with every dictionary filtered on desirable keys
-
+        output (list[dict]): list of dictionaries with every dictionary filtered on desirable keys
     """
     output = []
 
@@ -113,26 +116,31 @@ def reformat_clothes(clothes: list[dict]) -> list[dict]:
 
     return output
 
-def serialize_datetime(obj):
+def serialize_datetime(obj: bson.objectid.ObjectId | datetime) -> str:
     """
-    Small util function to JSON-serialize datetime objects
+    Small util function to JSON-serialize datetime objects and object Ids
+
     Args:
-        obj: datetime object
+        obj (bson.objectid.ObjectId | datetime): datetime object to convert to str, or objectId to convert to str
 
     Returns:
-        A JSON serializable datetime object
-
+        str, A JSON serializable datetime object (datetime provided as input), or objectId as a string
     """
     if isinstance(obj, datetime):
         return obj.isoformat()
+
     elif isinstance(obj, bson.objectid.ObjectId):
         return str(obj)
 
-def check_mongo(client: MongoClient):
+def check_mongo(client: MongoClient) -> None:
     """
-    Checks Mongo helath state and returns an error in case
-    :param client: MongoClient to check
-    :return: None if OK, JSONResponse status_code 500 if error
+    Checks Mongo health state and returns an error in case
+
+    Args:
+        client (MongoClient): MongoClient to check
+
+    Returns:
+        None if OK, raise Exception if error
     """
     # Check MongoDB health state
     try:
@@ -142,14 +150,15 @@ def check_mongo(client: MongoClient):
         logging.error(f"MongoDB is not alive, error {e}")
         raise Exception(f"MongoDB is not alive, error {e}")
 
-def extract_csrf_token(request_text):
+def extract_csrf_token(request_text: str) -> str:
     """
     Extracts CSRF-Token from request text
+
     Args:
-        request_text: str, request text
+        request_text (str): request text
 
-    Returns: str
-
+    Returns:
+        str, extracted CSRF-Token
     """
     match = re.search(r'\\"CSRF_TOKEN\\":\\"([^"]+)\\"', request_text)
 
@@ -161,14 +170,15 @@ def extract_csrf_token(request_text):
     else:
         logging.error(f"Error getting CSRF-Token")
 
-def get_geocode(address):
+def get_geocode(address: str) -> tuple[float, float]:
     """
     Get the latitude and longitude of the given address
+
     Args:
-        address: str, user address
+        address (str): user address
 
-    Returns: tuple[float, float], latitude and longitude
-
+    Returns:
+        tuple[float, float], latitude and longitude
     """
     logging.info("Getting address lat, lon")
 
@@ -181,15 +191,17 @@ def get_geocode(address):
 
     return lat, lon
 
-def get_mondial_pickup_points(zipcode, city):
+def get_mondial_pickup_points(zipcode: str,
+                              city: str) -> list:
     """
     Get mondial pickup
+
     Args:
-        zipcode: str
-        city: str
+        zipcode (str): zipcode to use
+        city (str): city to use
 
-    Returns: list, list of pickup points (from closest to furthest)
-
+    Returns:
+        list, list of pickup points (from closest to furthest)
     """
 
     headers = {
@@ -214,18 +226,23 @@ def get_mondial_pickup_points(zipcode, city):
 
     return json.loads(response.text)
 
-def get_colissimo_pickup_points(latitude, longitude, zipcode, city, country):
+def get_colissimo_pickup_points(latitude: str,
+                                longitude: str,
+                                zipcode: str,
+                                city: str,
+                                country: str) -> list:
     """
     Get colissimo pickup
+
     Args:
-        latitude: str
-        longitude: str
-        zipcode: str
-        city: str
-        country: str
+        latitude (str): latitude to use
+        longitude (str): longitude to use
+        zipcode (str): zipcode to use
+        city (str): city to use
+        country (str): country to use
 
-    Returns: list, list of pickup points (from closest to furthest)
-
+    Returns:
+        list, list of pickup points (from closest to furthest)
     """
 
     headers = {
@@ -266,26 +283,28 @@ def get_colissimo_pickup_points(latitude, longitude, zipcode, city, country):
 def compute_pickup_distance(point_1: tuple, point_2: tuple) -> float:
     """
     Compute distance between two points using coordinates in km
+
     Args:
-        point_1: tuple, (lat1, lon1)
-        point_2: tuple, (lat2, lon2)
+        point_1 (tuple): (lat1, lon1)
+        point_2 (tuple): (lat2, lon2)
 
-    Returns: float, distance in km
-
+    Returns:
+        float, distance in km
     """
     return geopy.distance.geodesic(point_1, point_2).km
 
 def store_cookies(client: MongoClient, db: str, coll: str, cookies: dict) -> None:
     """
     Stores cookies in Mongo to keep track of session cookies
+
     Args:
-        client: MongoClient
-        db: str, db where we store cookies
-        coll: str, collection where we store cookies
-        cookies: dict, cookies to store
+        client (MongoClient): MongoClient in use
+        db (str): db name where we store cookies
+        coll (str): collection where we store cookies
+        cookies (dict): cookies to store
 
-    Returns: None
-
+    Returns:
+        None
     """
     logging.info("Storing cookies in Mongo")
 
@@ -294,15 +313,16 @@ def store_cookies(client: MongoClient, db: str, coll: str, cookies: dict) -> Non
                                 {"$set": {"value": cookies}})
     logging.info("Storing cookies OK")
 
-def fit_uuid(text) :
+def fit_uuid(text: str) -> tuple[str, str] :
     """
     Get the default uuid's from Vinted.
     These are then used in the param file for the pickup point update.
+
     Args:
-        text: str, request response text
+        text (str): request response text
 
-    Returns: tuple[str, str]
-
+    Returns:
+        tuple[str, str], uuid's information
     """
     rate_uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_option"]["rate_uuid"]
     root_rate_uuid = json.loads(text)["checkout"]["services"]["shipping"]["delivery_types"]["pickup"]["shipping_option"]["root_rate_uuid"]
@@ -311,14 +331,15 @@ def fit_uuid(text) :
 
     return rate_uuid, root_rate_uuid
 
-def code_pup(p):
+def code_pup(p: dict) -> int:
     """
     Returns the transporter code as defined by Vinted
+
     Args:
-        p: dict, pickup point
+        p (dict): pickup point in use
 
-    Returns: int, transporter code
-
+    Returns:
+        int, transporter code
     """
     # Mondial
     if p['point']['carrier_id'] == 4:
@@ -351,17 +372,20 @@ def code_pup(p):
 
     return m
 
-def fit_pup(pick_up_available, col_pup, mon_pup) :
+def fit_pup(pick_up_available: list,
+            col_pup: tuple[float, float],
+            mon_pup: tuple[float, float]) -> tuple[int, str, str]:
     """
     Scans the nearby pickup points and tries to find one of the user's defined point.
     If no match, returns the first point of the list.
+
     Args:
-        pick_up_available: list, nearby pickup points
-        col_pup: tuple[float, float], latitude and longitude for colissimo saved pickup point
-        mon_pup: tuple[float, float], latitude and longitude for mondial saved pickup point
+        pick_up_available (list): nearby pickup points
+        col_pup (tuple[float, float]): latitude and longitude for colissimo saved pickup point
+        mon_pup (tuple[float, float]): latitude and longitude for mondial saved pickup point
 
-    Returns: tuple[int, str, str], point_uuid, point_code, transporter_code
-
+    Returns:
+        tuple[int, str, str], point_uuid, point_code, transporter_code
     """
 
     i = 0
