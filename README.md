@@ -5,7 +5,7 @@ This repo contains all the resources for our own Vinted API project.
 
 # Prerequisites
 
-- AWS machine (guysmachine)
+- AWS machine (guysmachine) with MongoDB instance running
 - Python 3.11
 
 
@@ -28,6 +28,8 @@ To deploy the project on **guysmachine**, you will first need to own an authoriz
 - **rsync/rsync_nico:** you need to be on neither branch **main** nor **dev**, the project will be sent to **guysmachine:~/vintedbot_api/tests/nico**
 - **rsync/rsync_hugo:** you need to be on neither branch **main** nor **dev**, the project will be sent to **guysmachine:~/vintedbot_api/tests/hugo**
 
+These scripts can of course be adapted to sync remotely on any other machine depending on your needs.
+
 
 
 # Available routes
@@ -47,3 +49,9 @@ Available collections:
 - **stock**: saves information about stock (items in_stock and sold)
 - **pickup**: saves information about pickup points
 - **cookies**: saves information about session cookies
+
+
+
+# Important note
+
+Please note that the project is not currently maintained and Vinted clothes cannot be retrieved by the API anymore in the current state.
