@@ -331,50 +331,40 @@ def fit_uuid(text: str) -> tuple[str, str] :
 
     return rate_uuid, root_rate_uuid
 
-def code_pup(p: dict) -> int:
+
+def code_pup(p: dict, 
+             pup_options: list):
     """
     Returns the transporter code as defined by Vinted
-
+    
     Args:
         p (dict): pickup point in use
+        pup_options (list): templated pickup codes
+
 
     Returns:
         int, transporter code
     """
-    # Mondial
-    if p['point']['carrier_id'] == 4:
-        m = 1017
 
-    # Chronopost
-    elif p['point']['carrier_id'] == 27:
-        m = 118
+    L_carrier, L_package = [], []
+    for point in pup_options :
+        L_carrier.append(point["carrier_id"])
+        L_package.append(point["package_type_id"])
 
-    # Shop to shop by Chronopost
-    elif p['point']['carrier_id'] == 68:
-        m = 1071
+    pup_id = p['point']['carrier_id']
 
-    # Vinted Go
-    elif p['point']['carrier_id'] == 97:
-        m = 1418
-
-    # Colis Prive FR
-    elif p['point']['carrier_id'] == 85:
-        m = 1213
-
-    # Relais colis
-    elif p['point']['carrier_id'] == 50:
-        m = 396
-
-    else:
-        m = 0
+    index = L_carrier.index(pup_id)
+    m = L_package[index]
 
     logging.info(f"Found transporter code: {m}")
 
     return m
 
+
 def fit_pup(pick_up_available: list,
             col_pup: tuple[float, float],
-            mon_pup: tuple[float, float]) -> tuple[int, str, str]:
+            mon_pup: tuple[float, float],
+            templated_pup: list) -> tuple[int, str, str]:
     """
     Scans the nearby pickup points and tries to find one of the user's defined point.
     If no match, returns the first point of the list.
@@ -383,6 +373,7 @@ def fit_pup(pick_up_available: list,
         pick_up_available (list): nearby pickup points
         col_pup (tuple[float, float]): latitude and longitude for colissimo saved pickup point
         mon_pup (tuple[float, float]): latitude and longitude for mondial saved pickup point
+        templated_pup (list): templated pickup codes
 
     Returns:
         tuple[int, str, str], point_uuid, point_code, transporter_code
@@ -405,7 +396,7 @@ def fit_pup(pick_up_available: list,
 
     point_uuid, point_code, transporter_code = (pick_up_available[marker].get('point').get('uuid'),
                                                 pick_up_available[marker].get('point').get('code'),
-                                                code_pup(pick_up_available[marker]))
+                                                code_pup(pick_up_available[marker], templated_pup))
 
     logging.info(f"Found point_uuid: {point_uuid}, point_code: {point_code}, transporter_code: {transporter_code}, "
                  f"marker: {marker}")
